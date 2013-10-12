@@ -1,12 +1,14 @@
 package lexer;
 
+
+
 public class Token
 {
   // Lab 1, exercise 1: read the MiniJava specification
   // carefully, and answer these two questions:
   //   1. whether or not one should add other token kinds?
   //   2. which tokens come with an extra "lexeme", and
-  //      which don't?
+  //      which don't?(value varies should take lexeme)
   // It's highly recommended that these token names are
   // alphabetically ordered, if you add new ones.
   public enum Kind {
@@ -54,6 +56,18 @@ public class Token
     TOKEN_TRUE, // "true"
     TOKEN_VOID, // "void"
     TOKEN_WHILE, // "while"
+    
+    //add by star qiu
+    TOKEN_COMMENT,//"comment"
+    TOKEN_DIV,//"/"
+    TOKEN_EQUAL,//"=="
+    TOKEN_FLOAT,//"float"
+    TOKEN_LQ,//"<="
+    TOKEN_GQ,//">="
+    TOKEN_GT,//">"
+    TOKEN_NQ,//"!="
+    TOKEN_OR,//"||"
+    TOKEN_REAL,//"real"
   }
 
   public Kind kind; // kind of the token
@@ -80,11 +94,15 @@ public class Token
     String s;
 
     // to check that the "lineNum" field has been properly set.
-    if (this.lineNum == null)
-      new util.Todo();
+    if (this.lineNum == null){
+    	//add by star qiu ,set the default value of lineNum if null.
+    	lineNum = 0;
+    }
+      //new util.Todo();
 
     s = ": " + ((this.lexeme == null) ? "<NONE>" : this.lexeme) + " : at line "
         + this.lineNum.toString();
     return this.kind.toString() + s;
   }
+  
 }
