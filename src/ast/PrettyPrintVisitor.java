@@ -1,5 +1,11 @@
 package ast;
 
+import java.util.LinkedList;
+
+import util.Flist;
+import ast.dec.Dec;
+import ast.type.Int;
+
 public class PrettyPrintVisitor implements Visitor
 {
   private int indentLevel;
@@ -35,6 +41,29 @@ public class PrettyPrintVisitor implements Visitor
   {
     System.out.print(s);
   }
+  
+  public static void main(String[] args) {
+	  
+	LinkedList<ast.dec.T> lis = new Flist<ast.dec.T>()
+      .addAll(new Dec(new Int(), "num"),new Dec(new Int(), "num2"));
+	new PrettyPrintVisitor().sayLoop4Args(lis);
+}
+  
+  public void sayLoop4Args(LinkedList args)
+  {
+	  
+	   int argc = args.size();
+	   if(0 >= argc){
+		   return;
+	   }
+	   Acceptable x = null;
+	    for (int i = 0; i < argc-1; i++) {
+	    	x = (Acceptable) args.get(i);
+	    	x.accept(this);
+	    	this.say(", ");
+		}
+	    ((Acceptable) args.get(argc-1)).accept(this);
+  }
 
   // /////////////////////////////////////////////////////
   // expressions
@@ -44,16 +73,22 @@ public class PrettyPrintVisitor implements Visitor
     // Lab2, exercise4: filling in missing code.
     // Similar for other methods with empty bodies.
     // Your code here:
+	e.left.accept(this);
+	e.right.accept(this);
   }
 
   @Override
   public void visit(ast.exp.And e)
   {
+	  e.left.accept(this);
+	  e.right.accept(this);
   }
 
   @Override
   public void visit(ast.exp.ArraySelect e)
   {
+	  e.array.accept(this);
+	  e.index.accept(this);
   }
 
   @Override
@@ -61,10 +96,11 @@ public class PrettyPrintVisitor implements Visitor
   {
     e.exp.accept(this);
     this.say("." + e.id + "(");
-    for (ast.exp.T x : e.args) {
+    sayLoop4Args(e.args);
+    /*for (ast.exp.T x : e.args) {
       x.accept(this);
       this.say(", ");
-    }
+    }*/
     this.say(")");
     return;
   }
@@ -72,6 +108,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.exp.False e)
   {
+	  this.say("false");
   }
 
   @Override
@@ -83,6 +120,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.exp.Length e)
   {
+	  e.array.accept(this);
   }
 
   @Override
@@ -97,6 +135,9 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.exp.NewIntArray e)
   {
+	  this.say("new int[" );
+	  e.exp.accept(this);
+	  this.say("]");
   }
 
   @Override
@@ -109,6 +150,8 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.exp.Not e)
   {
+	  this.say("!");
+	  e.exp.accept(this);
   }
 
   @Override
@@ -145,6 +188,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.exp.True e)
   {
+	  this.say("true");
   }
 
   // statements
@@ -161,11 +205,20 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.stm.AssignArray s)
   {
+	  this.say(s.id+"[");
+	  s.index.accept(this);
+	  this.say("] = ");
+	  s.exp.accept(this);
   }
 
   @Override
   public void visit(ast.stm.Block s)
   {
+	  for (ast.stm.T b : s.stms) {
+	      this.say("  ");
+	      b.accept(this);
+	      this.sayln(";");
+	    }
   }
 
   @Override
@@ -201,17 +254,21 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.stm.While s)
   {
+	  s.condition.accept(this);
+	  s.body.accept(this);
   }
 
   // type
   @Override
   public void visit(ast.type.Boolean t)
   {
+	  this.say("bollean");
   }
 
   @Override
   public void visit(ast.type.Class t)
   {
+	  this.say("class");
   }
 
   @Override
@@ -223,12 +280,15 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.type.IntArray t)
   {
+	  this.say("int[]");
   }
 
   // dec
   @Override
   public void visit(ast.dec.Dec d)
   {
+	  d.type.accept(this);
+	  this.say(" "+d.id);
   }
 
   // method
@@ -238,14 +298,15 @@ public class PrettyPrintVisitor implements Visitor
     this.say("  public ");
     m.retType.accept(this);
     this.say(" " + m.id + "(");
-    for (ast.dec.T d : m.formals) {
+    this.sayLoop4Args(m.formals);
+    /*for (ast.dec.T d : m.formals) {
       ast.dec.Dec dec = (ast.dec.Dec) d;
       dec.type.accept(this);
       this.say(" " + dec.id + ", ");
-    }
+    }*/
     this.sayln(")");
     this.sayln("  {");
-
+    
     for (ast.dec.T d : m.locals) {
       ast.dec.Dec dec = (ast.dec.Dec) d;
       this.say("    ");
