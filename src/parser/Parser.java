@@ -2,6 +2,8 @@ package parser;
 
 import java.io.BufferedInputStream;
 
+import ast.program.T;
+
 import lexer.Lexer;
 import lexer.Token;
 import lexer.Token.Kind;
@@ -540,9 +542,9 @@ public class Parser
     return; 
   }
 
-  public void parse()
+  public T parse()
   {
     parseProgram();
-    return;
+    return null;
   }
 }
