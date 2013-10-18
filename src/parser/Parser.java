@@ -1,5 +1,7 @@
 package parser;
 
+import java.io.BufferedInputStream;
+
 import lexer.Lexer;
 import lexer.Token;
 import lexer.Token.Kind;
@@ -8,9 +10,11 @@ public class Parser
 {
   Lexer lexer;
   Token current;
-
-  public Parser(String fname, java.io.InputStream fstream)
+  String filename;
+  
+  public Parser(String fname, BufferedInputStream fstream)
   {
+	filename = fname;
     lexer = new Lexer(fname, fstream);
     current = lexer.nextToken();
   }
@@ -29,17 +33,43 @@ public class Parser
     if (kind == current.kind)
       advance();
     else {
-      System.out.println("Expects: " + kind.toString());
-      System.out.println("But got: " + current.kind.toString());
-      System.exit(1);
+    	
+
+//        System.out.println("Expects: " + kind.toString());
+//        System.out.println("But got: " + current.kind.toString());
+        error(kind.toString(),this.current.kind.toString());
+//      System.exit(1);
     }
   }
 
-  private void error()
+  private void error(String mstr)
   {
+	String  tokenstr=this.current.kind.toString();
+	String  classstr=this.getClass().getName();
+	Integer linenum=this.current.lineNum;
+	String methodstr = mstr ;
     System.out.println("Syntax error: compilation aborting...\n");
+    System.out.println("Syntax error in file <"+filename+">\n");
+    System.out.println("   The error exist in the line "+linenum+"\n");
+    System.out.println("   The error near by the token "+tokenstr+"\n");
+    System.out.println("       The thread aborted in the method "+classstr+"."+methodstr+"()"+"\n");
+    
     System.exit(1);
     return;
+  }
+  private void error(String e,String b){
+	  String  tokenstr=this.current.kind.toString();
+		String  classstr=this.getClass().getName();
+		Integer linenum=this.current.lineNum;
+	    System.out.println("Syntax error: compilation aborting...\n");
+	    System.out.println("Syntax error in file <"+filename+">\n");
+	    System.out.println("   The error exist in the line "+linenum+"\n");
+	    System.out.println("   The error near by the token "+tokenstr+"\n");
+	    System.out.println("       The thread aborted in the method "+classstr+"."+Thread.currentThread().getStackTrace()[2].getMethodName()+"()"+"\n");
+	    System.out.println("			The method expects: " + e);
+	    System.out.println("			           but got: " + b);
+	    System.exit(1);
+	    return;
   }
 
   // ////////////////////////////////////////////////////////////
@@ -53,10 +83,10 @@ public class Parser
   // ExpRest -> , Exp
   private void parseExpList()
   {
-    if (current.kind == Kind.TOKEN_RPAREN)
+    if (current.kind == Kind.TOKEN_RPAREN)//")"
       return;
     parseExp();
-    while (current.kind == Kind.TOKEN_COMMER) {
+    while (current.kind == Kind.TOKEN_COMMER) {//","
       advance();
       parseExp();
     }
@@ -85,6 +115,9 @@ public class Parser
     case TOKEN_TRUE:
       advance();
       return;
+    case TOKEN_FALSE:
+      this.advance();
+      return;
     case TOKEN_THIS:
       advance();
       return;
@@ -106,12 +139,13 @@ public class Parser
         eatToken(Kind.TOKEN_RPAREN);
         return;
       default:
-        error();
+    	
+        error(Thread.currentThread().getStackTrace()[2].getMethodName());
         return;
       }
     }
     default:
-      error();
+      error(Thread.currentThread().getStackTrace()[2].getMethodName());
       return;
     }
   }
@@ -123,7 +157,7 @@ public class Parser
   private void parseNotExp()
   {
     parseAtomExp();
-    while (current.kind == Kind.TOKEN_DOT || current.kind == Kind.TOKEN_LBRACK) {
+    while (current.kind == Kind.TOKEN_DOT || current.kind == Kind.TOKEN_LBRACK) {//[
       if (current.kind == Kind.TOKEN_DOT) {
         advance();
         if (current.kind == Kind.TOKEN_LENGTH) {
@@ -132,7 +166,7 @@ public class Parser
         }
         eatToken(Kind.TOKEN_ID);
         eatToken(Kind.TOKEN_LPAREN);
-        parseExpList();
+        this.parseExpList();
         eatToken(Kind.TOKEN_RPAREN);
       } else {
         advance();
@@ -211,56 +245,87 @@ public class Parser
   // -> id [ Exp ]= Exp ;
   private void parseStatement()
   {
+	switch(current.kind){
+	case TOKEN_LBRACE:
+		this.advance();
+		this.parseStatements();
+		this.eatToken(Kind.TOKEN_RBRACE	);
+		return ;
+	case TOKEN_IF:
+		this.advance();
+		this.eatToken(Kind.TOKEN_LPAREN);
+		this.parseExp();
+		this.eatToken(Kind.TOKEN_RPAREN);
+		this.parseStatement();
+		this.eatToken(Kind.TOKEN_ELSE);
+		this.parseStatement();
+		return ;
+	case TOKEN_WHILE:
+		this.advance();
+		this.eatToken(Kind.TOKEN_LPAREN);
+		this.parseExp();
+		this.eatToken(Kind.TOKEN_RPAREN);
+		this.parseStatement();
+		return ;
+	case TOKEN_SYSTEM:
+		this.advance();
+		this.eatToken(Kind.TOKEN_DOT);
+		this.eatToken(Kind.TOKEN_OUT);
+		this.eatToken(Kind.TOKEN_DOT);
+		this.eatToken(Kind.TOKEN_PRINTLN);
+		this.eatToken(Kind.TOKEN_LPAREN);
+		this.parseExp();
+		this.eatToken(Kind.TOKEN_RPAREN);
+		this.eatToken(Kind.TOKEN_SEMI);
+		return ;
+	case TOKEN_ID:
+		this.advance();
+		switch(this.current.kind){
+		case TOKEN_ASSIGN:
+			this.advance();
+			this.parseExp();
+			this.eatToken(Kind.TOKEN_SEMI);
+			return;
+		case TOKEN_LBRACK:
+			this.advance();
+			this.parseExp();
+			this.eatToken(Kind.TOKEN_RBRACK);
+			this.eatToken(Kind.TOKEN_ASSIGN);
+			this.parseExp();
+			this.eatToken(Kind.TOKEN_SEMI);
+			return;
+		default:
+			error(Thread.currentThread().getStackTrace()[2].getMethodName());
+			return ;
+		}
+	case TOKEN_ASSIGN:
+		this.advance();
+		this.parseExpList();
+		this.eatToken(Kind.TOKEN_SEMI);
+		return ;
+	case TOKEN_LBRACK:
+		this.parseExp();
+		this.eatToken(Kind.TOKEN_RBRACK);
+		this.eatToken(Kind.TOKEN_ASSIGN);
+		this.parseExp();
+		this.eatToken(Kind.TOKEN_SEMI);
+		return;
+		
+	default:
+		error(Thread.currentThread().getStackTrace()[2].getMethodName());
+		return ;
+	}
     // Lab1. Exercise 4: Fill in the missing code
     // to parse a statement.
     //new util.Todo();
-	 switch (current.kind) {
-		case TOKEN_IF:
-			eatToken(Kind.TOKEN_LPAREN);
-			parseExp();
-			eatToken(Kind.TOKEN_RPAREN);
-			parseStatement();
-			eatToken(Kind.TOKEN_ELSE);
-			parseStatement();
-			return;
-		case TOKEN_WHILE:
-			eatToken(Kind.TOKEN_LPAREN);
-			parseExp();
-			eatToken(Kind.TOKEN_RPAREN);
-			parseStatement();
-			return;
-		case TOKEN_SYSTEM:
-			eatToken(Kind.TOKEN_DOT);
-			eatToken(Kind.TOKEN_OUT);
-			eatToken(Kind.TOKEN_PRINTLN);
-			eatToken(Kind.TOKEN_LPAREN);
-			parseExp();
-			eatToken(Kind.TOKEN_RPAREN);
-			eatToken(Kind.TOKEN_SEMI);
-			return;
-		case TOKEN_ID:
-			advance();
-			if (current.kind == Kind.TOKEN_EQUAL) {
-				parseExp();
-			} else {
-				eatToken(Kind.TOKEN_LBRACK);
-				parseExp();
-				eatToken(Kind.TOKEN_RBRACK);
-				eatToken(Kind.TOKEN_EQUAL);
-				parseExp();
-			}
-			eatToken(Kind.TOKEN_SEMI);
-			return;
-		default:
-			error();
-			return;
-	}
   }
 
   // Statements -> Statement Statements
   // ->
   private void parseStatements()
   {
+	if(current.kind == Kind.TOKEN_ASSIGN||current.kind == Kind.TOKEN_LBRACK)
+		this.parseStatement();
     while (current.kind == Kind.TOKEN_LBRACE || current.kind == Kind.TOKEN_IF
         || current.kind == Kind.TOKEN_WHILE
         || current.kind == Kind.TOKEN_SYSTEM || current.kind == Kind.TOKEN_ID) {
@@ -273,27 +338,34 @@ public class Parser
   // -> boolean
   // -> int
   // -> id
+  
   private void parseType()
   {
+	switch(this.current.kind){
+	case TOKEN_INT:
+		this.advance();
+		if(this.current.kind==Kind.TOKEN_LBRACK){
+			this.advance();
+			this.eatToken(Kind.TOKEN_RBRACK);
+			return;
+		}
+		else {
+			//this.advance();
+			return;
+		}
+	case TOKEN_BOOLEAN:
+		this.advance();
+		return;
+	case TOKEN_ID:
+		this.advance();
+		return;
+	default:
+		error(Thread.currentThread().getStackTrace()[2].getMethodName());
+		return;
+	}
     // Lab1. Exercise 4: Fill in the missing code
     // to parse a type.
     //new util.Todo();
-	  switch(current.kind){
-	  	case TOKEN_INT:
-	  		advance();
-	  		if (current.kind == Kind.TOKEN_LBRACK) {
-				eatToken(Kind.TOKEN_LBRACK);
-				eatToken(Kind.TOKEN_RBRACK);
-			}
-	  		return;
-	  	case TOKEN_BOOLEAN:
-	  		return;
-	  	case TOKEN_ID:
-	  		return;
-	  	default:
-	  		error();
-	  		return;
-	  }
   }
 
   // VarDecl -> Type id ;
@@ -301,19 +373,39 @@ public class Parser
   {
     // to parse the "Type" nonterminal in this method, instead of writing
     // a fresh one.
-    parseType();
-    eatToken(Kind.TOKEN_ID);
-    eatToken(Kind.TOKEN_SEMI);
-    return;
+	  
+//	if(current.kind ==Kind.TOKEN_ID){
+//		this.advance();
+//		if(current.kind == Kind.TOKEN_ASSIGN)
+//			return;
+//	}
+	if(this.current.kind==Kind.TOKEN_ID){
+		eatToken(Kind.TOKEN_ID);
+		eatToken(Kind.TOKEN_SEMI);
+		return;
+	}
+	else{
+	    parseType();
+	    eatToken(Kind.TOKEN_ID);
+	    eatToken(Kind.TOKEN_SEMI);
+	    return;
+	}
   }
 
   // VarDecls -> VarDecl VarDecls
   // ->
   private void parseVarDecls()
-  {
+  {//||current.kind == Kind.TOKEN_ID   
     while (current.kind == Kind.TOKEN_INT || current.kind == Kind.TOKEN_BOOLEAN
-        || current.kind == Kind.TOKEN_ID) {
-      parseVarDecl();
+    		||current.kind == Kind.TOKEN_ID) {
+      if(this.current.kind==Kind.TOKEN_ID){
+    	this.advance();
+    	if(this.current.kind==Kind.TOKEN_ID)
+    		this.parseVarDecl();
+    	else return;
+      }
+      else
+    	  parseVarDecl();
     }
     return;
   }
@@ -340,20 +432,33 @@ public class Parser
   // { VarDecl* Statement* return Exp ;}
   private void parseMethod()
   {
+	if(this.current.kind==Kind.TOKEN_PUBLIC){
+	
+		this.advance();
+		this.parseType();
+		this.eatToken(Kind.TOKEN_ID);
+		this.eatToken(Kind.TOKEN_LPAREN);
+		this.parseFormalList();
+		this.eatToken(Kind.TOKEN_RPAREN);
+		this.eatToken(Kind.TOKEN_LBRACE);
+		this.parseVarDecls();
+		this.parseStatements();
+		this.eatToken(Kind.TOKEN_RETURN);
+		this.parseExp();
+		this.eatToken(Kind.TOKEN_SEMI);
+		this.eatToken(Kind.TOKEN_RBRACE);
+		return;
+	}
+	else{
+		this.error(Thread.currentThread().getStackTrace()[2].getMethodName());
+		return;
+	}
+		
+	
     // Lab1. Exercise 4: Fill in the missing code
     // to parse a method.
     //new util.Todo();
-	eatToken(Kind.TOKEN_PUBLIC);
-	parseType();
-	eatToken(Kind.TOKEN_ID);
-	eatToken(Kind.TOKEN_LPAREN);
-	parseFormalList();
-	eatToken(Kind.TOKEN_RPAREN);
-	parseVarDecls();
-	parseStatements();
-	eatToken(Kind.TOKEN_RETURN);
-	parseExp();
-    return;
+    //return;
   }
 
   // MethodDecls -> MethodDecl MethodDecls
@@ -401,29 +506,29 @@ public class Parser
   // }
   // }
   private void parseMainClass()
-  {
+  {	
+	this.eatToken(Kind.TOKEN_CLASS);
+	this.eatToken(Kind.TOKEN_ID);
+	this.eatToken(Kind.TOKEN_LBRACE);
+	this.eatToken(Kind.TOKEN_PUBLIC);
+	this.eatToken(Kind.TOKEN_STATIC);
+	this.eatToken(Kind.TOKEN_VOID);
+	this.eatToken(Kind.TOKEN_MAIN);
+	this.eatToken(Kind.TOKEN_LPAREN);
+	this.eatToken(Kind.TOKEN_STRING);
+	this.eatToken(Kind.TOKEN_LBRACK);
+	this.eatToken(Kind.TOKEN_RBRACK);
+	this.eatToken(Kind.TOKEN_ID);
+	this.eatToken(Kind.TOKEN_RPAREN);
+	this.eatToken(Kind.TOKEN_LBRACE);
+	this.parseStatements();
+	this.eatToken(Kind.TOKEN_RBRACE);
+	this.eatToken(Kind.TOKEN_RBRACE);
+	return;
     // Lab1. Exercise 4: Fill in the missing code
     // to parse a main class as described by the
     // grammar above.
     //new util.Todo();
-	eatToken(Kind.TOKEN_CLASS);
-	eatToken(Kind.TOKEN_ID);
-	eatToken(Kind.TOKEN_LBRACE);
-	eatToken(Kind.TOKEN_PUBLIC);
-	eatToken(Kind.TOKEN_STATIC);
-	eatToken(Kind.TOKEN_VOID);
-	eatToken(Kind.TOKEN_MAIN);
-	eatToken(Kind.TOKEN_LPAREN);
-	eatToken(Kind.TOKEN_STRING);
-	eatToken(Kind.TOKEN_LBRACK);
-	eatToken(Kind.TOKEN_RBRACK);
-	eatToken(Kind.TOKEN_ID);
-	eatToken(Kind.TOKEN_RPAREN);
-	eatToken(Kind.TOKEN_LBRACE);
-	parseStatement();
-	eatToken(Kind.TOKEN_RBRACE);
-	eatToken(Kind.TOKEN_RBRACE);
-	return;
   }
 
   // Program -> MainClass ClassDecl*
@@ -432,7 +537,7 @@ public class Parser
     parseMainClass();
     parseClassDecls();
     eatToken(Kind.TOKEN_EOF);
-    return;
+    return; 
   }
 
   public void parse()

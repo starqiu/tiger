@@ -30,10 +30,6 @@ public class CommandLine
       this.kind = kind;
       this.action = action;
     }
-    
-    public void f(Object ss){
-    	
-    }
 
   }
 
@@ -45,6 +41,7 @@ public class CommandLine
     this.args = new util.Flist<Arg<Object>>().addAll(new Arg<Object>("elab",
         "<arg>", "dump information about elaboration", Kind.String,
         new F<Object>() {
+          @Override
           public void f(Object ss)
           {
             String s = (String) ss;
@@ -61,6 +58,7 @@ public class CommandLine
           }
         }), new Arg<Object>("help", null, "show this help information",
         Kind.Empty, new F<Object>() {
+          @Override
           public void f(Object s)
           {
             usage();
@@ -69,6 +67,7 @@ public class CommandLine
           }
         }), new Arg<Object>("lex", null, "show the result of lexical analysis",
         Kind.Empty, new F<Object>() {
+          @Override
           public void f(Object s)
           {
             Control.lex = true;
@@ -76,6 +75,7 @@ public class CommandLine
           }
         }), new Arg<Object>("testlexer", null,
         "whether or not to test the lexer", Kind.Empty, new F<Object>() {
+          @Override
           public void f(Object s)
           {
             Control.testlexer = true;

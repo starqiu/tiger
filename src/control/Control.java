@@ -3,10 +3,10 @@ package control;
 public class Control
 {
   // compiler testing and debugging
-  public static boolean testlexer = true;
+  public static boolean testlexer = false;
   
   // lexer and parser
-  public static boolean lex = false;
+  public static boolean lex = true;
 
   // elaborator
   public static boolean elabClassTable = false;
