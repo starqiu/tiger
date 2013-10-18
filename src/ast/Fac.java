@@ -78,5 +78,8 @@ public class Fac
 								  new While(new Lt(new Id("i"), new Id("sum")),
 										  new Assign("sum", new Add(new Id("sum"), new Id("i"))))),
 						  new Id("sum"))));
+  //program
+  public static Program sumPgm = new Program(sum,
+      new Flist<ast.classs.T>().addAll(doit));
   
 }
