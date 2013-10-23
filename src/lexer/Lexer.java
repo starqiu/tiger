@@ -149,7 +149,6 @@ public class Lexer
     	  } 
     	  this.bfReset();
     	  this.buf = String.valueOf(cc).trim();
-   
 	      if(buf .equals("boolean"))
 	    	  return new Token(Kind.TOKEN_BOOLEAN,lineNum);
 	      if(buf .equals("class"))
@@ -192,8 +191,19 @@ public class Lexer
 	    	  return new Token(Kind.TOKEN_VOID,lineNum);
 	      if(buf .equals("while"))
 	    	  return new Token(Kind.TOKEN_WHILE,lineNum);    
-	      if(buf != null) 
-	    	  return new Token(Kind.TOKEN_ID,lineNum,buf);
+	      if(buf != null){
+	    	  this.bfMark();
+	    	  c =  this.bfRead();
+	    	  while(' ' == c || '\t' == c){
+	    		  c = this.bfRead();
+	    	  }
+	    	  this.bfReset();
+	    	  if (todo.isAlp(c)) {
+	    		  return new Token(Kind.TOKEN_ID,lineNum,buf,true);
+	    	  }else {
+	    		  return new Token(Kind.TOKEN_ID,lineNum,buf,false);
+	    	  }
+	      }
       }else return new Token(Kind.TOKEN_EOF,lineNum,buf);
       return null;
     }

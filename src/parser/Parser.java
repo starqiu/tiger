@@ -1,8 +1,33 @@
 package parser;
 
 import java.io.BufferedInputStream;
+import java.util.LinkedList;
 
+import ast.exp.Add;
+import ast.exp.And;
+import ast.exp.ArraySelect;
+import ast.exp.Call;
+import ast.exp.False;
+import ast.exp.Id;
+import ast.exp.Length;
+import ast.exp.Lt;
+import ast.exp.NewIntArray;
+import ast.exp.NewObject;
+import ast.exp.Not;
+import ast.exp.Num;
+import ast.exp.Sub;
+import ast.exp.This;
+import ast.exp.Times;
+import ast.exp.True;
 import ast.program.T;
+import ast.stm.Assign;
+import ast.stm.AssignArray;
+import ast.stm.Block;
+import ast.stm.If;
+import ast.stm.Print;
+import ast.stm.While;
+import ast.type.Boolean;
+import ast.type.Int;
 
 import lexer.Lexer;
 import lexer.Token;
@@ -83,16 +108,17 @@ public class Parser
   // ExpList -> Exp ExpRest*
   // ->
   // ExpRest -> , Exp
-  private void parseExpList()
+  private LinkedList<ast.exp.T> parseExpList()
   {
+	LinkedList<ast.exp.T> exps = new LinkedList<ast.exp.T>();
     if (current.kind == Kind.TOKEN_RPAREN)//")"
-      return;
-    parseExp();
+      return null;
+    exps.addLast(parseExp());
     while (current.kind == Kind.TOKEN_COMMER) {//","
       advance();
-      parseExp();
+      exps.addLast(parseExp());
     }
-    return;
+    return exps;
   }
 
   // AtomExp -> (exp)
@@ -103,52 +129,53 @@ public class Parser
   // -> id
   // -> new int [exp]
   // -> new id ()
-  private void parseAtomExp()
+  private ast.exp.T parseAtomExp()
   {
+	ast.exp.T exp = null;
     switch (current.kind) {
     case TOKEN_LPAREN:
       advance();
-      parseExp();
+      exp = parseExp();
       eatToken(Kind.TOKEN_RPAREN);
-      return;
+      return exp;
     case TOKEN_NUM:
       advance();
-      return;
+      return new Num(Integer.parseInt(current.lexeme));
     case TOKEN_TRUE:
       advance();
-      return;
+      return new True();
     case TOKEN_FALSE:
       this.advance();
-      return;
+      return new False();
     case TOKEN_THIS:
       advance();
-      return;
+      return new This();
     case TOKEN_ID:
       advance();
-      return;
+      return new Id(current.lexeme);
     case TOKEN_NEW: {
       advance();
       switch (current.kind) {
       case TOKEN_INT:
         advance();
         eatToken(Kind.TOKEN_LBRACK);
-        parseExp();
+        exp = parseExp();
         eatToken(Kind.TOKEN_RBRACK);
-        return;
+        return new NewIntArray(exp);
       case TOKEN_ID:
         advance();
         eatToken(Kind.TOKEN_LPAREN);
         eatToken(Kind.TOKEN_RPAREN);
-        return;
+        return new NewObject(current.lexeme);
       default:
     	
         error(Thread.currentThread().getStackTrace()[2].getMethodName());
-        return;
+        return null;
       }
     }
     default:
       error(Thread.currentThread().getStackTrace()[2].getMethodName());
-      return;
+      return null;
     }
   }
 
@@ -156,87 +183,104 @@ public class Parser
   // -> AtomExp .id (expList)
   // -> AtomExp [exp]
   // -> AtomExp .length
-  private void parseNotExp()
+  private ast.exp.T parseNotExp()
   {
-    parseAtomExp();
+	ast.exp.T exp = null;
+    exp = parseAtomExp();
     while (current.kind == Kind.TOKEN_DOT || current.kind == Kind.TOKEN_LBRACK) {//[
       if (current.kind == Kind.TOKEN_DOT) {
         advance();
         if (current.kind == Kind.TOKEN_LENGTH) {
           advance();
-          return;
+          return new Length(exp);
         }
+        String id = current.lexeme;
         eatToken(Kind.TOKEN_ID);
         eatToken(Kind.TOKEN_LPAREN);
-        this.parseExpList();
+        LinkedList<ast.exp.T> exps = this.parseExpList();
         eatToken(Kind.TOKEN_RPAREN);
+        exp = new Call(exp, id, exps);
       } else {
         advance();
-        parseExp();
+        ast.exp.T exp_index = parseExp();
         eatToken(Kind.TOKEN_RBRACK);
+        exp = new ArraySelect(exp, exp_index);
       }
     }
-    return;
+    return exp;
   }
 
   // TimesExp -> ! TimesExp
   // -> NotExp
-  private void parseTimesExp()
+  private ast.exp.T parseTimesExp()
   {
+	ast.exp.T exp = parseNotExp();
     while (current.kind == Kind.TOKEN_NOT) {
       advance();
+      exp = new Not(exp);
     }
-    parseNotExp();
-    return;
+    return exp;
   }
 
   // AddSubExp -> TimesExp * TimesExp
   // -> TimesExp
-  private void parseAddSubExp()
+  private ast.exp.T parseAddSubExp()
   {
-    parseTimesExp();
+	ast.exp.T exp = parseTimesExp();
     while (current.kind == Kind.TOKEN_TIMES) {
       advance();
-      parseTimesExp();
+      ast.exp.T exp_rt = parseTimesExp();
+      exp = new Times(exp, exp_rt);
     }
-    return;
+    return exp;
   }
 
   // LtExp -> AddSubExp + AddSubExp
   // -> AddSubExp - AddSubExp
   // -> AddSubExp
-  private void parseLtExp()
+  private ast.exp.T parseLtExp()
   {
-    parseAddSubExp();
+	  
+	  ast.exp.T exp = parseAddSubExp();
     while (current.kind == Kind.TOKEN_ADD || current.kind == Kind.TOKEN_SUB) {
       advance();
-      parseAddSubExp();
+      ast.exp.T exp_rt = parseAddSubExp();
+      if (current.kind == Kind.TOKEN_ADD) {
+		exp = new Add(exp, exp_rt);
+      }else {
+    	exp = new Sub(exp, exp_rt);
+		
+      }
     }
-    return;
+    return exp;
   }
 
   // AndExp -> LtExp < LtExp
   // -> LtExp
-  private void parseAndExp()
+  private ast.exp.T parseAndExp()
   {
-    parseLtExp();
+	
+	  ast.exp.T exp = parseLtExp();
     while (current.kind == Kind.TOKEN_LT) {
       advance();
-      parseLtExp();
+      ast.exp.T exp_rt = parseLtExp();
+      exp = new Lt(exp, exp_rt);
     }
-    return;
+    return exp;
   }
 
   // Exp -> AndExp && AndExp
   // -> AndExp
-  private void parseExp()
+  private ast.exp.T parseExp()
   {
-    parseAndExp();
+	ast.exp.T exp = null;
+	exp = parseAndExp();
     while (current.kind == Kind.TOKEN_AND) {
       advance();
-      parseAndExp();
+      ast.exp.T exp_rt = parseAndExp();
+      exp = new And(exp, exp_rt);
     }
-    return;
+    return exp;
   }
 
   // Statement -> { Statement* }
@@ -245,77 +289,68 @@ public class Parser
   // -> System.out.println ( Exp ) ;
   // -> id = Exp ;
   // -> id [ Exp ]= Exp ;
-  private void parseStatement()
+  private ast.stm.T parseStatement()
   {
+	LinkedList<ast.stm.T> stms = new LinkedList<ast.stm.T>();
+	ast.stm.T stm = null;
+	ast.exp.T exp = null;
 	switch(current.kind){
-	case TOKEN_LBRACE:
-		this.advance();
-		this.parseStatements();
-		this.eatToken(Kind.TOKEN_RBRACE	);
-		return ;
-	case TOKEN_IF:
-		this.advance();
-		this.eatToken(Kind.TOKEN_LPAREN);
-		this.parseExp();
-		this.eatToken(Kind.TOKEN_RPAREN);
-		this.parseStatement();
-		this.eatToken(Kind.TOKEN_ELSE);
-		this.parseStatement();
-		return ;
-	case TOKEN_WHILE:
-		this.advance();
-		this.eatToken(Kind.TOKEN_LPAREN);
-		this.parseExp();
-		this.eatToken(Kind.TOKEN_RPAREN);
-		this.parseStatement();
-		return ;
-	case TOKEN_SYSTEM:
-		this.advance();
-		this.eatToken(Kind.TOKEN_DOT);
-		this.eatToken(Kind.TOKEN_OUT);
-		this.eatToken(Kind.TOKEN_DOT);
-		this.eatToken(Kind.TOKEN_PRINTLN);
-		this.eatToken(Kind.TOKEN_LPAREN);
-		this.parseExp();
-		this.eatToken(Kind.TOKEN_RPAREN);
-		this.eatToken(Kind.TOKEN_SEMI);
-		return ;
-	case TOKEN_ID:
-		this.advance();
-		switch(this.current.kind){
-		case TOKEN_ASSIGN:
+		case TOKEN_LBRACE:
 			this.advance();
-			this.parseExp();
-			this.eatToken(Kind.TOKEN_SEMI);
-			return;
-		case TOKEN_LBRACK:
+			stm = this.parseStatements();
+			this.eatToken(Kind.TOKEN_RBRACE	);
+			return stm;
+		case TOKEN_IF:
 			this.advance();
-			this.parseExp();
-			this.eatToken(Kind.TOKEN_RBRACK);
-			this.eatToken(Kind.TOKEN_ASSIGN);
-			this.parseExp();
+			this.eatToken(Kind.TOKEN_LPAREN);
+			exp = this.parseExp();
+			this.eatToken(Kind.TOKEN_RPAREN);
+			stm = this.parseStatement();
+			this.eatToken(Kind.TOKEN_ELSE);
+			ast.stm.T stm_else = this.parseStatement();
+			return new If(exp, stm, stm_else);
+		case TOKEN_WHILE:
+			this.advance();
+			this.eatToken(Kind.TOKEN_LPAREN);
+			exp = this.parseExp();
+			this.eatToken(Kind.TOKEN_RPAREN);
+			stm = this.parseStatement();
+			return new While(exp, stm);
+		case TOKEN_SYSTEM:
+			this.advance();
+			this.eatToken(Kind.TOKEN_DOT);
+			this.eatToken(Kind.TOKEN_OUT);
+			this.eatToken(Kind.TOKEN_DOT);
+			this.eatToken(Kind.TOKEN_PRINTLN);
+			this.eatToken(Kind.TOKEN_LPAREN);
+			exp = this.parseExp();
+			this.eatToken(Kind.TOKEN_RPAREN);
 			this.eatToken(Kind.TOKEN_SEMI);
-			return;
+			return new Print(exp);
+		case TOKEN_ID:
+			String id = current.lexeme;
+			this.advance();
+			switch(this.current.kind){
+				case TOKEN_ASSIGN:
+					this.advance();
+					exp = this.parseExp();
+					this.eatToken(Kind.TOKEN_SEMI);
+					return new Assign(id, exp);
+				case TOKEN_LBRACK:
+					this.advance();
+					exp = this.parseExp();
+					this.eatToken(Kind.TOKEN_RBRACK);
+					this.eatToken(Kind.TOKEN_ASSIGN);
+					ast.exp.T exp_rt = this.parseExp();
+					this.eatToken(Kind.TOKEN_SEMI);
+					return new AssignArray(id, exp, exp_rt);
+				default:
+					error(Thread.currentThread().getStackTrace()[2].getMethodName());
+					return null;
+			}
 		default:
 			error(Thread.currentThread().getStackTrace()[2].getMethodName());
-			return ;
-		}
-	case TOKEN_ASSIGN:
-		this.advance();
-		this.parseExpList();
-		this.eatToken(Kind.TOKEN_SEMI);
-		return ;
-	case TOKEN_LBRACK:
-		this.parseExp();
-		this.eatToken(Kind.TOKEN_RBRACK);
-		this.eatToken(Kind.TOKEN_ASSIGN);
-		this.parseExp();
-		this.eatToken(Kind.TOKEN_SEMI);
-		return;
-		
-	default:
-		error(Thread.currentThread().getStackTrace()[2].getMethodName());
-		return ;
+			return null;
 	}
     // Lab1. Exercise 4: Fill in the missing code
     // to parse a statement.
@@ -324,16 +359,15 @@ public class Parser
 
   // Statements -> Statement Statements
   // ->
-  private void parseStatements()
+  private ast.stm.T parseStatements()
   {
-	if(current.kind == Kind.TOKEN_ASSIGN||current.kind == Kind.TOKEN_LBRACK)
-		this.parseStatement();
+	LinkedList<ast.stm.T> stms = new LinkedList<ast.stm.T>();
     while (current.kind == Kind.TOKEN_LBRACE || current.kind == Kind.TOKEN_IF
         || current.kind == Kind.TOKEN_WHILE
         || current.kind == Kind.TOKEN_SYSTEM || current.kind == Kind.TOKEN_ID) {
-      parseStatement();
+    	stms.addLast(this.parseStatement());
     }
-    return;
+    return new Block(stms);
   }
 
   // Type -> int []
@@ -375,23 +409,10 @@ public class Parser
   {
     // to parse the "Type" nonterminal in this method, instead of writing
     // a fresh one.
-	  
-//	if(current.kind ==Kind.TOKEN_ID){
-//		this.advance();
-//		if(current.kind == Kind.TOKEN_ASSIGN)
-//			return;
-//	}
-	if(this.current.kind==Kind.TOKEN_ID){
-		eatToken(Kind.TOKEN_ID);
-		eatToken(Kind.TOKEN_SEMI);
-		return;
-	}
-	else{
-	    parseType();
-	    eatToken(Kind.TOKEN_ID);
-	    eatToken(Kind.TOKEN_SEMI);
-	    return;
-	}
+    parseType();
+    eatToken(Kind.TOKEN_ID);
+    eatToken(Kind.TOKEN_SEMI);
+    return;
   }
 
   // VarDecls -> VarDecl VarDecls
@@ -399,15 +420,8 @@ public class Parser
   private void parseVarDecls()
   {//||current.kind == Kind.TOKEN_ID   
     while (current.kind == Kind.TOKEN_INT || current.kind == Kind.TOKEN_BOOLEAN
-    		||current.kind == Kind.TOKEN_ID) {
-      if(this.current.kind==Kind.TOKEN_ID){
-    	this.advance();
-    	if(this.current.kind==Kind.TOKEN_ID)
+    		||current.kind == Kind.TOKEN_ID || current.isField == true) {
     		this.parseVarDecl();
-    	else return;
-      }
-      else
-    	  parseVarDecl();
     }
     return;
   }
@@ -523,7 +537,7 @@ public class Parser
 	this.eatToken(Kind.TOKEN_ID);
 	this.eatToken(Kind.TOKEN_RPAREN);
 	this.eatToken(Kind.TOKEN_LBRACE);
-	this.parseStatements();
+	this.parseStatement();
 	this.eatToken(Kind.TOKEN_RBRACE);
 	this.eatToken(Kind.TOKEN_RBRACE);
 	return;

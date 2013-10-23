@@ -1,7 +1,5 @@
 package ast;
 
-import com.sun.org.apache.bcel.internal.generic.NEW;
-
 import util.Flist;
 import ast.exp.*;
 import ast.classs.*;

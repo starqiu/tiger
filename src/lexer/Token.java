@@ -59,6 +59,7 @@ public class Token
   public Kind kind; // kind of the token
   public String lexeme; // extra lexeme for this token, if any
   public Integer lineNum; // on which line of the source file this token appears
+  public boolean isField;// if id is a class, then true
 
   // Some tokens don't come with lexeme but 
   // others do.
@@ -73,6 +74,12 @@ public class Token
     this(kind, lineNum);
     this.lexeme = lexeme;
   }
+  public Token(Kind kind, Integer lineNum, String lexeme,boolean isField)
+  {
+	  this(kind, lineNum);
+	  this.lexeme = lexeme;
+	  this.isField = isField;
+  }
 
   @Override
   public String toString()
@@ -85,6 +92,8 @@ public class Token
 
     s = ": " + ((this.lexeme == null) ? "<NONE>" : this.lexeme) + " : at line "
         + this.lineNum.toString();
+    if(this.isField == true)
+		s += " is a class";
     return this.kind.toString() + s;
   }
 }
