@@ -101,7 +101,7 @@ public class Parser
 	    System.out.println("       The thread aborted in the method "+classstr+"."+Thread.currentThread().getStackTrace()[2].getMethodName()+"()"+"\n");
 	    System.out.println("			The method expects: " + e);
 	    System.out.println("			           but got: " + b);
-	    System.exit(1);
+	    //System.exit(1);
 	    return;
   }
 

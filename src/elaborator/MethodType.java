@@ -4,6 +4,7 @@ public class MethodType
 {
   public ast.type.T retType;
   public java.util.LinkedList<ast.dec.T> argsType;
+  public int callTimes = 1;//times of the method be called
 
   public MethodType(ast.type.T retType, java.util.LinkedList<ast.dec.T> decs)
   {

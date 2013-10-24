@@ -1,13 +1,22 @@
 package elaborator;
 
-import util.Todo;
+import java.util.Set;
+import java.util.Map.Entry;
+
 
 public class ClassTable
 {
   // map each class name (a string), to the class bindings.
   private java.util.Hashtable<String, ClassBinding> table;
 
-  public ClassTable()
+  /**
+ * @return the table
+ */
+public java.util.Hashtable<String, ClassBinding> getTable() {
+	return table;
+}
+
+public ClassTable()
   {
     this.table = new java.util.Hashtable<String, ClassBinding>();
   }
@@ -16,8 +25,8 @@ public class ClassTable
   public void put(String c, ClassBinding cb)
   {
     if (this.table.get(c) != null) {
-      System.out.println("duplicated class: " + c);
-      System.exit(1);
+      System.err.println("error: duplicated class: " + c);
+      //System.exit(1);
     }
     this.table.put(c, cb);
   }
@@ -60,6 +69,9 @@ public class ClassTable
       cb = this.table.get(cb.extendss);
       type = cb.fields.get(xid);
     }
+    if (null != type) {
+		type.callTimes++; 
+	}
     return type;
   }
 
@@ -76,12 +88,35 @@ public class ClassTable
       cb = this.table.get(cb.extendss);
       type = cb.methods.get(mid);
     }
+    if (null != type) {
+		type.callTimes++; 
+	}
     return type;
   }
 
   public void dump()
   {
-    new Todo();
+      //new Todo();
+	  System.out.println("dump the class table!!");
+	  Set<Entry<String, ClassBinding>> cSet = table.entrySet();
+	    for (Entry<String, ClassBinding> entry : cSet) {
+	    	System.out.println("class name :"+entry.getKey()+" --");
+	    	Set<Entry<String, ast.type.T>> fieldSet = entry.getValue().fields.entrySet();
+	    	System.out.println("  field:");
+	    	for (Entry<String, ast.type.T> typeEnr : fieldSet) {
+	    		System.out.print("  ");
+				System.out.println(typeEnr.getKey()+" : "+typeEnr.getValue()+" call "
+						+typeEnr.getValue().callTimes +" times ");
+			}
+	    	System.out.println("  method:");
+			Set<Entry<String, elaborator.MethodType>> methodSet = entry.getValue().methods.entrySet();
+			for (Entry<String, elaborator.MethodType> typeEnr : methodSet) {
+				System.out.print("  ");
+				System.out.println(typeEnr.getKey()+" : "+typeEnr.getValue()+" call "
+						+typeEnr.getValue().callTimes +" times ");
+			}
+		} 
+	    System.out.println("dump the class table end!");
   }
 
   @Override
