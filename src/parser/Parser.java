@@ -249,14 +249,15 @@ public class Parser
   {
 	  
 	ast.exp.T exp = parseAddSubExp();
+	Kind kind = null;
     while (current.kind == Kind.TOKEN_ADD || current.kind == Kind.TOKEN_SUB) {
+      kind = current.kind;
       advance();
       ast.exp.T exp_rt = parseAddSubExp();
-      if (current.kind == Kind.TOKEN_ADD) {
+      if (kind == Kind.TOKEN_ADD) {
 		exp = new Add(exp, exp_rt);
       }else {
     	exp = new Sub(exp, exp_rt);
-		
       }
     }
     return exp;
@@ -298,7 +299,6 @@ public class Parser
   // -> id [ Exp ]= Exp ;
   private ast.stm.T parseStatement()
   {
-	LinkedList<ast.stm.T> stms = new LinkedList<ast.stm.T>();
 	ast.stm.T stm = null;
 	ast.exp.T exp = null;
 	switch(current.kind){
@@ -384,7 +384,6 @@ public class Parser
   
   private ast.type.T parseType()
   {
-	ast.type.T type = null;
 	switch(this.current.kind){
 		case TOKEN_INT:
 			this.advance();
@@ -431,7 +430,7 @@ public class Parser
   {//||current.kind == Kind.TOKEN_ID   
 	LinkedList<ast.dec.T> decs = new LinkedList<ast.dec.T>();
     while (current.kind == Kind.TOKEN_INT || current.kind == Kind.TOKEN_BOOLEAN
-    		||current.kind == Kind.TOKEN_ID || current.isField == true) {
+    		||(current.kind == Kind.TOKEN_ID && current.isField == true)) {
     		decs.addLast(this.parseVarDecl());
     }
     return decs;
