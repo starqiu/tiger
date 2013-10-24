@@ -2,10 +2,6 @@ package ast;
 
 import java.util.LinkedList;
 
-import util.Flist;
-import ast.dec.Dec;
-import ast.type.Int;
-
 public class PrettyPrintVisitor implements Visitor
 {
   private int indentLevel;
@@ -42,13 +38,6 @@ public class PrettyPrintVisitor implements Visitor
     System.out.print(s);
   }
   
-  public static void main(String[] args) {
-	  
-	LinkedList<ast.dec.T> lis = new Flist<ast.dec.T>()
-      .addAll(new Dec(new Int(), "num"),new Dec(new Int(), "num2"));
-	new PrettyPrintVisitor().sayLoop4Args(lis);
-}
-  
   public void sayLoop4Args(LinkedList args)
   {
 	  
@@ -74,6 +63,7 @@ public class PrettyPrintVisitor implements Visitor
     // Similar for other methods with empty bodies.
     // Your code here:
 	e.left.accept(this);
+	this.say(" + ");
 	e.right.accept(this);
   }
 
@@ -81,6 +71,7 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(ast.exp.And e)
   {
 	  e.left.accept(this);
+	  this.say(" && ");
 	  e.right.accept(this);
   }
 
@@ -88,7 +79,9 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(ast.exp.ArraySelect e)
   {
 	  e.array.accept(this);
+	  this.say(" [");
 	  e.index.accept(this);
+	  this.say("]");
   }
 
   @Override
@@ -121,6 +114,7 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(ast.exp.Length e)
   {
 	  e.array.accept(this);
+	  this.say(" .length");
   }
 
   @Override
@@ -198,27 +192,32 @@ public class PrettyPrintVisitor implements Visitor
     this.printSpaces();
     this.say(s.id + " = ");
     s.exp.accept(this);
-    this.say(";");
+    this.sayln(";");
     return;
   }
 
   @Override
   public void visit(ast.stm.AssignArray s)
   {
+	  this.printSpaces();
 	  this.say(s.id+"[");
 	  s.index.accept(this);
 	  this.say("] = ");
 	  s.exp.accept(this);
+	  this.sayln(";");
   }
 
   @Override
   public void visit(ast.stm.Block s)
   {
+	  this.sayln("{");
 	  for (ast.stm.T b : s.stms) {
-	      this.say("  ");
 	      b.accept(this);
-	      this.sayln(";");
-	    }
+	  }
+	  this.unIndent();
+	  this.printSpaces();
+	  this.sayln("}");
+	  this.indent();
   }
 
   @Override
@@ -231,12 +230,10 @@ public class PrettyPrintVisitor implements Visitor
     this.indent();
     s.thenn.accept(this);
     this.unIndent();
-    this.sayln("");
     this.printSpaces();
     this.sayln("else");
     this.indent();
     s.elsee.accept(this);
-    this.sayln("");
     this.unIndent();
     return;
   }
@@ -245,7 +242,7 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(ast.stm.Print s)
   {
     this.printSpaces();
-    this.say("System.out.println (");
+    this.say("System.out.println(");
     s.exp.accept(this);
     this.sayln(");");
     return;
@@ -254,8 +251,13 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.stm.While s)
   {
+	  this.printSpaces();
+	  this.say("while (");
 	  s.condition.accept(this);
+	  this.sayln(")");
+	  this.indent();
 	  s.body.accept(this);
+	  this.unIndent();
   }
 
   // type
