@@ -38,7 +38,47 @@ public class CommandLine
   @SuppressWarnings("unchecked")
   public CommandLine()
   {
-    this.args = new util.Flist<Arg<Object>>().addAll(new Arg<Object>("elab",
+    this.args = new util.Flist<Arg<Object>>().addAll(new Arg<Object>("codegen",
+        "{bytecode|C|x86}", "which code generator to use", Kind.String,
+        new F<Object>() {
+          @Override
+          public void f(Object ss)
+          {
+            String s = (String) ss;
+            if (s.equals("bytecode")) {
+              control.Control.codegen = control.Control.Codegen_Kind_t.Bytecode;
+            } 
+            else if (s.equals("C")){
+              control.Control.codegen = control.Control.Codegen_Kind_t.C;
+            }
+            else if (s.equals("x86")){
+              control.Control.codegen = control.Control.Codegen_Kind_t.X86;
+            }
+            else {
+              System.out.println("bad argument: " + s);
+              output();
+              System.exit(1);
+            }
+            return;
+          }
+        }), new Arg<Object>("dump",
+        "<ir>", "dump information about the ir", Kind.String,
+        new F<Object>() {
+          @Override
+          public void f(Object ss)
+          {
+            String s = (String) ss;
+            if (s.equals("ast")) {
+              control.Control.dumpAst = true;
+            } 
+            else {
+              System.out.println("bad argument: " + s);
+              output();
+              System.exit(1);
+            }
+            return;
+          }
+        }), new Arg<Object>("elab",
         "<arg>", "dump information about elaboration", Kind.String,
         new F<Object>() {
           @Override
@@ -71,6 +111,22 @@ public class CommandLine
           public void f(Object s)
           {
             Control.lex = true;
+            return;
+          }
+        }), new Arg<Object>("output", "<outfile>", "set the name of the output file",
+        Kind.String, new F<Object>() {
+          @Override
+          public void f(Object s)
+          {
+            Control.outputName = (String)s;
+            return;
+          }
+        }), new Arg<Object>("testFac", null,
+        "whether or not to test the Tiger compiler on Fac.java", Kind.Empty, new F<Object>() {
+          @Override
+          public void f(Object s)
+          {
+            Control.testFac = true;
             return;
           }
         }), new Arg<Object>("testlexer", null,
@@ -108,6 +164,7 @@ public class CommandLine
           continue;
 
         found = true;
+        String theArg = null;
         switch (arg.kind) {
         case Empty:
           arg.action.f(null);
@@ -118,9 +175,9 @@ public class CommandLine
             this.output();
             System.exit(1);
           }
+          theArg = cargs[++i];
           break;
         }
-        String theArg = cargs[i];
         switch (arg.kind) {
         case Bool:
           if (theArg.equals("true"))
