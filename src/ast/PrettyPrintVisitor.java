@@ -270,7 +270,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.type.Class t)
   {
-	  this.say("class");
+	  this.say("class "+t.id);
   }
 
   @Override

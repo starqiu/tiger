@@ -166,9 +166,8 @@ public class ElaboratorVisitor implements ast.Visitor
     e.left.accept(this);
     ast.type.T ty = this.type;
     e.right.accept(this);
-    if (!this.type.toString().equals(ty.toString())
-    		|| !(this.type instanceof Boolean))
-      error("the left and the right of the Lt expression if different,should be boolean!",e);
+    if (!this.type.toString().equals(ty.toString()))
+      error("the left and the right of the Lt expression if different,should be the same!",e);
     this.type = new ast.type.Boolean();
     return;
   }
