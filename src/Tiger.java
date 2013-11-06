@@ -1,6 +1,9 @@
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+
+import ast.exp.This;
 
 import lexer.Lexer;
 import lexer.Token;
@@ -15,13 +18,13 @@ public class Tiger
 {
   public static void main(String[] args)
   {
-    InputStream fstream;
+	BufferedInputStream fstream;
     Parser parser;
 
     // ///////////////////////////////////////////////////////
     // handle command line arguments
     CommandLine cmd = new CommandLine();
-    String fname = cmd.scan(args);
+    String fname = "test/Factorial.java";//cmd.scan(args);
 
     // /////////////////////////////////////////////////////
     // to test the pretty printer on the "test/Fac.java" program
@@ -131,6 +134,21 @@ public class Tiger
     // call gcc to compile the generated C or x86
     // file, or call java to run the bytecode file.
     // Your code:
+    String outputName = null;
+    if (Control.outputName != null){
+      outputName = Control.outputName;
+    }else if (Control.fileName != null){
+      outputName = Control.fileName + ".c";
+    }else{
+      outputName = "a.c";
+    }
+    Runtime rt = Runtime.getRuntime();
+    String cplCmd = "gcc "+outputName+" runtime/runtime.c";
+    try {
+		rt.exec(cplCmd);
+	} catch (IOException e) {
+		e.printStackTrace();
+	}
 
     return;
   }
