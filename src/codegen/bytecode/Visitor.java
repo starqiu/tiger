@@ -6,6 +6,8 @@ public interface Visitor
 {
   // statements
   public void visit(Aload s);
+  
+  public void visit(IAload s);
 
   public void visit(Areturn s);
 
@@ -24,8 +26,14 @@ public interface Visitor
   public void visit(Ireturn s);
 
   public void visit(Istore s);
+  
+  public void visit(IAstore s);
 
   public void visit(Isub s);
+  
+  public void visit(Iadd s);
+  
+  public void visit(Iand s);
 
   public void visit(Invokevirtual s);
 
@@ -58,4 +66,5 @@ public interface Visitor
 
   // program
   public void visit(codegen.bytecode.program.Program p);
+
 }

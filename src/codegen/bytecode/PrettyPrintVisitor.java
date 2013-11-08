@@ -1,5 +1,10 @@
 package codegen.bytecode;
 
+import codegen.bytecode.stm.IAload;
+import codegen.bytecode.stm.IAstore;
+import codegen.bytecode.stm.Iadd;
+import codegen.bytecode.stm.Iand;
+
 public class PrettyPrintVisitor implements Visitor
 {
   private java.io.BufferedWriter writer;
@@ -188,6 +193,8 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(codegen.bytecode.dec.Dec d)
   {
+	  d.type.accept(this);
+	  //this.sayln("load)
   }
 
   // method
@@ -313,5 +320,33 @@ public class PrettyPrintVisitor implements Visitor
     }
 
   }
+
+/* (non-Javadoc)
+ * @see codegen.bytecode.Visitor#visit(codegen.bytecode.stm.IAload)
+ */
+@Override
+public void visit(IAload s) {
+}
+
+/* (non-Javadoc)
+ * @see codegen.bytecode.Visitor#visit(codegen.bytecode.stm.IAstore)
+ */
+@Override
+public void visit(IAstore s) {
+}
+
+/* (non-Javadoc)
+ * @see codegen.bytecode.Visitor#visit(codegen.bytecode.stm.Iadd)
+ */
+@Override
+public void visit(Iadd s) {
+}
+
+/* (non-Javadoc)
+ * @see codegen.bytecode.Visitor#visit(codegen.bytecode.stm.Iand)
+ */
+@Override
+public void visit(Iand s) {
+}
 
 }
