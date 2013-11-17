@@ -93,36 +93,65 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(ast.exp.Call e)
   {
-    ast.type.T leftty;
-    ast.type.Class ty = null;
+	  ast.type.T leftty;
+	    ast.type.Class ty = null;
 
-    e.exp.accept(this);
-    leftty = this.type;
-    if (leftty instanceof ast.type.Class) {
-      ty = (ast.type.Class) leftty;
-      e.type = ty.id;
-    } else{
-    	error("the exp parameter of Call expression should be a Class type!",e);
-    }
-    MethodType mty = this.classTable.getm(ty.id, e.id);
-    java.util.LinkedList<ast.type.T> argsty = new java.util.LinkedList<ast.type.T>();
-    for (ast.exp.T a : e.args) {
-      a.accept(this);
-      argsty.addLast(this.type);
-    }
-    if (mty.argsType.size() != argsty.size())
-      error("the number of args type in "+mty.toString()
-    		  +" does not match what it declares!",e);
-    for (int i = 0; i < argsty.size(); i++) {
-      ast.dec.Dec dec = (ast.dec.Dec) mty.argsType.get(i);
-      if (!dec.type.toString().equals(argsty.get(i).toString()))
-        error("the args type in "+mty.toString()
-      		  +" does not match what it declares!",e);
-    }
-    this.type = mty.retType;
-    e.at = argsty;
-    e.rt = this.type;
-    return;
+	    e.exp.accept(this);
+	    leftty = this.type;
+	    if (leftty instanceof ast.type.Class) {
+	      ty = (ast.type.Class) leftty;
+	      e.type = ty.id;
+	    } else
+	      error();
+	    MethodType mty = this.classTable.getm(ty.id, e.id);
+	    java.util.LinkedList<ast.type.T> declaredArgTypes
+	    = new java.util.LinkedList<ast.type.T>();
+	    for (ast.dec.T dec: mty.argsType){
+	      declaredArgTypes.add(((ast.dec.Dec)dec).type);
+	    }
+	    java.util.LinkedList<ast.type.T> argsty = new java.util.LinkedList<ast.type.T>();
+	    for (ast.exp.T a : e.args) {
+	      a.accept(this);
+	      argsty.addLast(this.type);
+	    }
+	    if (declaredArgTypes.size() != argsty.size())
+	      error("the number of actual and formal arguments is different!",e);
+	    // be the same");
+	    // For now, the following code only checks that
+	    // the types for actual and formal arguments should
+	    // be the same. However, in MiniJava, the actual type
+	    // of the parameter can also be a subtype (sub-class) of the 
+	    // formal type. That is, one can pass an object of type "A"
+	    // to a method expecting a type "B", whenever type "A" is
+	    // a sub-class of type "B".
+	    // Modify the following code accordingly:
+	    String typeStr = null;
+	    for (int i = 0; i < argsty.size(); i++) {
+	      typeStr = argsty.get(i).toString();
+	      if (declaredArgTypes.get(i).toString().equals(typeStr)){
+	    	  continue;
+	      }else{
+	    	  //To see whether declaredArgType is argsty's super class
+	    	  ClassBinding cb = this.classTable.get(typeStr);
+	    	  if (null == cb) {//not a class
+	    		  error("the type for actual and formal arguments is different!",e);
+	    	  }
+	    	  while(null != typeStr){
+	    		  if (declaredArgTypes.get(i).toString().equals(typeStr)){
+	    	    	  continue;
+	    	      }else {
+	    	    	  typeStr = cb.extendss;
+	    	      }
+	    	  }
+	    	  //typeStr is null
+	    	  error("the type for actual and formal arguments is different!",e);
+	      }
+	    }
+	    this.type = mty.retType;
+	    // the following two types should be the declared types.
+	    e.at = declaredArgTypes;
+	    e.rt = this.type;
+	    return;
   }
 
   @Override
