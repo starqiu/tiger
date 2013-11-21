@@ -129,7 +129,7 @@ public class TranslateVisitor implements ast.Visitor
   public void visit(ast.exp.NewIntArray e)
   {
 	  e.exp.accept(this);
-//	  emit(new codegen.bytecode.stm.New)
+	  //emit(new codegen.bytecode.stm)
   }
 
   @Override

@@ -86,7 +86,6 @@ public class Parser
     System.out.println("   The error exist in the line "+linenum+"\n");
     System.out.println("   The error near by the token "+tokenstr+"\n");
     System.out.println("       The thread aborted in the method "+classstr+"."+methodstr+"()"+"\n");
-    
     System.exit(1);
     return;
   }
@@ -118,7 +117,7 @@ public class Parser
   {
 	LinkedList<ast.exp.T> exps = new LinkedList<ast.exp.T>();
     if (current.kind == Kind.TOKEN_RPAREN)//")"
-      return null;
+      return exps;
     exps.addLast(parseExp());
     while (current.kind == Kind.TOKEN_COMMER) {//","
       advance();
@@ -283,11 +282,11 @@ public class Parser
   {
 	ast.exp.T exp = null;
 	exp = parseAndExp();
-    while (current.kind == Kind.TOKEN_AND) {
-      advance();
-      ast.exp.T exp_rt = parseAndExp();
-      exp = new And(exp, exp_rt);
-    }
+	while (current.kind == Kind.TOKEN_AND) {
+		advance();
+		ast.exp.T exp_rt = parseAndExp();
+		exp = new And(exp, exp_rt);
+	}
     return exp;
   }
 

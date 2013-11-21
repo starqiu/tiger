@@ -123,9 +123,9 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(codegen.C.exp.NewIntArray e)
   {
-	  this.say("Tiger_new int[" );
+	  this.say("((int*) (Tiger_new_array((" );
 	  e.exp.accept(this);
-	  this.say("]");
+	  this.say(")*4)))");
   }
 
   @Override
@@ -267,7 +267,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(codegen.C.type.IntArray t)
   {
-	  this.say("int[]");
+	  this.say("int*");
   }
 
   // dec

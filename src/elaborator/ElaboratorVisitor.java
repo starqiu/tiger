@@ -6,6 +6,7 @@ import java.util.Set;
 
 import ast.Acceptable;
 import ast.exp.NewIntArray;
+import ast.exp.This;
 import ast.type.Boolean;
 import ast.type.Int;
 import ast.type.IntArray;
@@ -110,10 +111,10 @@ public class ElaboratorVisitor implements ast.Visitor
 	      declaredArgTypes.add(((ast.dec.Dec)dec).type);
 	    }
 	    java.util.LinkedList<ast.type.T> argsty = new java.util.LinkedList<ast.type.T>();
-	    for (ast.exp.T a : e.args) {
-	      a.accept(this);
-	      argsty.addLast(this.type);
-	    }
+    	for (ast.exp.T a : e.args) {
+    		a.accept(this);
+    		argsty.addLast(this.type);
+    	}
 	    if (declaredArgTypes.size() != argsty.size())
 	      error("the number of actual and formal arguments is different!",e);
 	    // be the same");
@@ -298,11 +299,11 @@ public class ElaboratorVisitor implements ast.Visitor
 	    if (type == null)
 	      error("can not find any declaraion about"+s.id+"!",s);
 	    s.index.accept(this);
-	    if (!(this.type instanceof Int)) {
+	    if (!("@int".equals(this.type.toString()))) {
 			error("the index expression of AssignArray should be Int type! ",s);
 		}
 	    s.exp.accept(this);
-	    if (!(this.type.equals(type))) {
+	    if (!("@int[]".equals(type.toString()))) {
 	    	error("the type of the left and the right expression in Assign operator mismatch!",s);
 		}
     
