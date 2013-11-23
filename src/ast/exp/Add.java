@@ -1,5 +1,7 @@
 package ast.exp;
 
+import ast.Visitor;
+
 public class Add extends T
 {
   public T left;
@@ -12,7 +14,7 @@ public class Add extends T
   }
 
   @Override
-  public void accept(ast.Visitor v)
+  public void accept(Visitor v)
   {
     v.visit(this);
     return;

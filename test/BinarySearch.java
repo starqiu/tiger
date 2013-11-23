@@ -3,6 +3,7 @@ class BinarySearch{
 	System.out.println(new BS().Start(20));
     }
 }
+// a
 // This class contains an array of integers and
 // methods to initialize, print and search the array
 // using Binary Search

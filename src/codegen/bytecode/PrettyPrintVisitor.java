@@ -1,13 +1,21 @@
 package codegen.bytecode;
 
+import control.Control;
+import codegen.bytecode.stm.ArrayLength;
+import codegen.bytecode.stm.IAload;
+import codegen.bytecode.stm.IAstore;
+import codegen.bytecode.stm.Iadd;
+import codegen.bytecode.stm.Iand;
+import codegen.bytecode.stm.NewArray;
+
 public class PrettyPrintVisitor implements Visitor
 {
   private java.io.BufferedWriter writer;
-
+  
   public PrettyPrintVisitor()
   {
   }
-
+  
   private void sayln(String s)
   {
     say(s);
@@ -91,6 +99,26 @@ public class PrettyPrintVisitor implements Visitor
     this.isayln("iload " + s.index);
     return;
   }
+  
+  @Override
+  public void visit(IAload s) {
+	  this.sayln("iaload");
+  }
+
+  @Override
+  public void visit(IAstore s) {
+	  this.sayln("iastore");
+  }
+
+  @Override
+  public void visit(Iadd s) {
+	  this.sayln("iadd");
+  }
+
+  @Override
+  public void visit(Iand s) {
+	  this.sayln("iand");
+  }
 
   @Override
   public void visit(codegen.bytecode.stm.Imul s)
@@ -151,9 +179,19 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(codegen.bytecode.stm.New s)
   {
     this.isayln("new " + s.c);
-    this.isayln("dup");
+    this.isayln("dup");//dup:duplicate the value on top of the stack
     this.isayln("invokespecial " + s.c + "/<init>()V");
     return;
+  }
+  
+  @Override
+  public void visit(ArrayLength s) {
+	  this.sayln("arraylength");
+  }
+
+  @Override
+  public void visit(NewArray s) {
+	  this.sayln("newarray int");
   }
 
   @Override
@@ -188,6 +226,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(codegen.bytecode.dec.Dec d)
   {
+	  return;
   }
 
   // method
@@ -220,6 +259,7 @@ public class PrettyPrintVisitor implements Visitor
     try {
       this.writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(c.id + ".j")));
+      Control.bytecodeFiles.add(c.id);
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);
@@ -274,6 +314,7 @@ public class PrettyPrintVisitor implements Visitor
     try {
       this.writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(c.id + ".j")));
+      Control.bytecodeFiles.add(c.id);
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);

@@ -3,10 +3,11 @@ package ast.exp;
 public class NewIntArray extends T
 {
   public T exp;
+  public String type="int";
 
-  public NewIntArray(T exp)
+  public NewIntArray(T length)
   {
-    this.exp = exp;
+	this.exp = length;
   }
 
   @Override

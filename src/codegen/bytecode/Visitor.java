@@ -8,11 +8,15 @@ public interface Visitor
   public void visit(Aload s);
 
   public void visit(Areturn s);
+  
+  public void visit(ArrayLength s);
 
   public void visit(Astore s);
 
   public void visit(Goto s);
 
+  public void visit(IAload s);
+  
   public void visit(Ificmplt s);
 
   public void visit(Ifne s);
@@ -24,8 +28,14 @@ public interface Visitor
   public void visit(Ireturn s);
 
   public void visit(Istore s);
+  
+  public void visit(IAstore s);
 
   public void visit(Isub s);
+  
+  public void visit(Iadd s);
+  
+  public void visit(Iand s);
 
   public void visit(Invokevirtual s);
 
@@ -36,6 +46,8 @@ public interface Visitor
   public void visit(Print s);
 
   public void visit(New s);
+  
+  public void visit(NewArray s);
 
   // type
   public void visit(codegen.bytecode.type.Class t);
@@ -58,4 +70,7 @@ public interface Visitor
 
   // program
   public void visit(codegen.bytecode.program.Program p);
+
+
+
 }

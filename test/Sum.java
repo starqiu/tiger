@@ -3,7 +3,7 @@ class Sum {
         System.out.println(new Doit().doit(101));
     }
 }
-
+//a
 class Doit {
     public int doit(int n) {
         int sum;

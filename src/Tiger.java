@@ -1,27 +1,26 @@
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.IOException;
 
 import lexer.Lexer;
 import lexer.Token;
 import lexer.Token.Kind;
-
+import parser.Parser;
 import control.CommandLine;
 import control.Control;
-
-import parser.Parser;
 
 public class Tiger
 {
   public static void main(String[] args)
   {
-    InputStream fstream;
+	BufferedInputStream fstream;
     Parser parser;
 
     // ///////////////////////////////////////////////////////
     // handle command line arguments
     CommandLine cmd = new CommandLine();
-    String fname = cmd.scan(args);
+    //String fname = "test/Factorial.java";//cmd.scan(args);
+    String fname = "test/Test.java";
 
     // /////////////////////////////////////////////////////
     // to test the pretty printer on the "test/Fac.java" program
@@ -37,16 +36,38 @@ public class Tiger
       ast.Fac.prog.accept(elab);
 
       // Compile this program to C.
-      System.out.println("Translate the program to C");
-      codegen.C.TranslateVisitor trans2C = new codegen.C.TranslateVisitor();
-      // pass this visitor to the "Fac.java" program.
-      ast.Fac.prog.accept(trans2C);
-      // this visitor will return an AST for C.
-      codegen.C.program.T cast = trans2C.program;
-      // output the AST for C.
-      codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
-      cast.accept(ppc);
-
+      System.out.println("code generation starting");
+   // code generation
+      switch (control.Control.codegen) {
+      case Bytecode:
+        System.out.println("bytecode codegen");            
+        codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
+        ast.Fac.prog.accept(trans);
+        codegen.bytecode.program.T bytecodeAst = trans.program;
+        codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
+        bytecodeAst.accept(ppbc);
+        break;
+      case C:
+        System.out.println("C codegen");
+        codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
+        ast.Fac.prog.accept(transC);
+        codegen.C.program.T cAst = transC.program;
+        codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
+        cAst.accept(ppc);
+        break;
+      case Dalvik:
+        /*codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();
+        ast.Fac.prog.accept(transDalvik);
+        codegen.dalvik.program.T dalvikAst = transDalvik.program;
+        codegen.dalvik.PrettyPrintVisitor ppDalvik = new codegen.dalvik.PrettyPrintVisitor();
+        dalvikAst.accept(ppDalvik);*/
+        break;
+      case X86:
+        // similar
+        break;
+      default:
+        break;
+      }
       System.out.println("Testing the Tiger compiler on Fac.java finished.");
       System.exit(1);
     }
@@ -105,6 +126,9 @@ public class Tiger
     theAst.accept(elab);
 
     // code generation
+    String outputName = null;
+    String cplCmd=null;
+    Runtime rt = Runtime.getRuntime();
     switch (control.Control.codegen) {
     case Bytecode:
       codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
@@ -112,6 +136,17 @@ public class Tiger
       codegen.bytecode.program.T bytecodeAst = trans.program;
       codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
       bytecodeAst.accept(ppbc);
+      cplCmd = "java -jar jasmin.jar ";
+      for (String className:Control.bytecodeFiles) {
+    	  try {
+	  		rt.exec(cplCmd+className+".j");
+	  	  } catch (IOException e) {
+	  		e.printStackTrace();
+	  	  }
+	  	System.out.println("the result is: "+className+".class(in the root directory)");
+	  }
+      System.out.println("you can use this commod to see the result: java "
+    		  +Control.fileName.substring(Control.fileName.indexOf('/')+1,Control.fileName.indexOf('.')));
       break;
     case C:
       codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
@@ -119,6 +154,27 @@ public class Tiger
       codegen.C.program.T cAst = transC.program;
       codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
       cAst.accept(ppc);
+      if (Control.outputName != null){
+    	  outputName = Control.outputName;
+      }else if (Control.fileName != null){
+    	  outputName = Control.fileName + ".c";
+      }else{
+    	  outputName = "a.c";
+      }
+      System.out.println("the result is: "+outputName+".exe");
+      cplCmd = "gcc "+outputName+" runtime/runtime.c -o "+outputName+".exe";
+      try {
+  		rt.exec(cplCmd);
+  	  } catch (IOException e) {
+  		e.printStackTrace();
+  	  }
+      break;
+    case Dalvik:
+      /*codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();
+      theAst.accept(transDalvik);
+      codegen.dalvik.program.T dalvikAst = transDalvik.program;
+      codegen.dalvik.PrettyPrintVisitor ppDalvik = new codegen.dalvik.PrettyPrintVisitor();
+      dalvikAst.accept(ppDalvik);*/
       break;
     case X86:
       // similar
@@ -130,7 +186,8 @@ public class Tiger
     // Lab3, exercise 6: add some glue code to
     // call gcc to compile the generated C or x86
     // file, or call java to run the bytecode file.
-    // Your code:
+	// or dalvik to run the dalvik bytecode.
+    // Your code here:
 
     return;
   }
