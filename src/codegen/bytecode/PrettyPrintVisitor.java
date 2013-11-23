@@ -1,17 +1,15 @@
 package codegen.bytecode;
 
+import codegen.bytecode.stm.ArrayLength;
 import codegen.bytecode.stm.IAload;
 import codegen.bytecode.stm.IAstore;
 import codegen.bytecode.stm.Iadd;
 import codegen.bytecode.stm.Iand;
+import codegen.bytecode.stm.NewArray;
 
 public class PrettyPrintVisitor implements Visitor
 {
   private java.io.BufferedWriter writer;
-
-  public PrettyPrintVisitor()
-  {
-  }
 
   private void sayln(String s)
   {
@@ -96,6 +94,22 @@ public class PrettyPrintVisitor implements Visitor
     this.isayln("iload " + s.index);
     return;
   }
+  
+  @Override
+  public void visit(IAload s) {
+  }
+
+  @Override
+  public void visit(IAstore s) {
+  }
+
+  @Override
+  public void visit(Iadd s) {
+  }
+
+  @Override
+  public void visit(Iand s) {
+  }
 
   @Override
   public void visit(codegen.bytecode.stm.Imul s)
@@ -156,9 +170,17 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(codegen.bytecode.stm.New s)
   {
     this.isayln("new " + s.c);
-    this.isayln("dup");
+    this.isayln("dup");//dup:duplicate the value on top of the stack
     this.isayln("invokespecial " + s.c + "/<init>()V");
     return;
+  }
+  
+  @Override
+  public void visit(ArrayLength s) {
+  }
+
+  @Override
+  public void visit(NewArray s) {
   }
 
   @Override
@@ -174,19 +196,22 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(codegen.bytecode.type.Class t)
   {
-    this.say("L" + t.id + ";");
+    //this.say("L" + t.id + ";");
+    this.say("a");
   }
 
   @Override
   public void visit(codegen.bytecode.type.Int t)
   {
-    this.say("I");
+    //this.say("I");
+    this.say("i");
   }
 
   @Override
   public void visit(codegen.bytecode.type.IntArray t)
   {
-    this.say("[I");
+    //this.say("[I");
+    this.say("ia");
   }
 
   // dec
@@ -194,7 +219,8 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(codegen.bytecode.dec.Dec d)
   {
 	  d.type.accept(this);
-	  //this.sayln("load)
+	  int index = 0;
+	  this.sayln("load "+d.id);
   }
 
   // method
@@ -320,33 +346,5 @@ public class PrettyPrintVisitor implements Visitor
     }
 
   }
-
-/* (non-Javadoc)
- * @see codegen.bytecode.Visitor#visit(codegen.bytecode.stm.IAload)
- */
-@Override
-public void visit(IAload s) {
-}
-
-/* (non-Javadoc)
- * @see codegen.bytecode.Visitor#visit(codegen.bytecode.stm.IAstore)
- */
-@Override
-public void visit(IAstore s) {
-}
-
-/* (non-Javadoc)
- * @see codegen.bytecode.Visitor#visit(codegen.bytecode.stm.Iadd)
- */
-@Override
-public void visit(Iadd s) {
-}
-
-/* (non-Javadoc)
- * @see codegen.bytecode.Visitor#visit(codegen.bytecode.stm.Iand)
- */
-@Override
-public void visit(Iand s) {
-}
 
 }

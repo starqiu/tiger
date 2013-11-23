@@ -210,7 +210,7 @@ public class TranslateVisitor implements ast.Visitor
 	  emit(new codegen.bytecode.stm.Aload(index));
 	  s.index.accept(this);
 	  s.exp.accept(this);
-	  emit(new codegen.bytecode.stm.IAstore(index));
+	  //emit(new codegen.bytecode.stm.IAstore(index));
   }
 
   @Override
