@@ -196,22 +196,19 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(codegen.bytecode.type.Class t)
   {
-    //this.say("L" + t.id + ";");
-    this.say("a");
+    this.say("L" + t.id + ";");
   }
 
   @Override
   public void visit(codegen.bytecode.type.Int t)
   {
-    //this.say("I");
-    this.say("i");
+    this.say("I");
   }
 
   @Override
   public void visit(codegen.bytecode.type.IntArray t)
   {
-    //this.say("[I");
-    this.say("ia");
+    this.say("[I");
   }
 
   // dec
