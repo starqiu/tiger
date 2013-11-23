@@ -2,7 +2,6 @@ package codegen.bytecode;
 
 import java.util.Hashtable;
 import java.util.LinkedList;
-import codegen.bytecode.stm.T;
 
 import util.Label;
 
@@ -62,7 +61,7 @@ public class TranslateVisitor implements ast.Visitor
   {
 	  e.array.accept(this);
 	  e.index.accept(this);
-	  
+	  emit(new codegen.bytecode.stm.IAload());
   }
 
   @Override
@@ -106,6 +105,7 @@ public class TranslateVisitor implements ast.Visitor
   public void visit(ast.exp.Length e)
   {
 	  e.array.accept(this);
+	  emit(new codegen.bytecode.stm.ArrayLength());
   }
 
   @Override
@@ -129,7 +129,7 @@ public class TranslateVisitor implements ast.Visitor
   public void visit(ast.exp.NewIntArray e)
   {
 	  e.exp.accept(this);
-	  //emit(new codegen.bytecode.stm)
+	  emit(new codegen.bytecode.stm.NewArray(e.type));
   }
 
   @Override
@@ -210,7 +210,7 @@ public class TranslateVisitor implements ast.Visitor
 	  emit(new codegen.bytecode.stm.Aload(index));
 	  s.index.accept(this);
 	  s.exp.accept(this);
-	  //emit(new codegen.bytecode.stm.IAstore(index));
+	  emit(new codegen.bytecode.stm.IAstore());
   }
 
   @Override

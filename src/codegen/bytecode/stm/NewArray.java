@@ -2,18 +2,16 @@ package codegen.bytecode.stm;
 
 import codegen.bytecode.Visitor;
 
-public class NewArray extends T
-{
-  public int count;
+public class NewArray extends T {
+	public String type = "int";
 
-  public NewArray(int count)
-  {
-    this.count = count;
-  }
+	public NewArray(String type) {
+		this.type = type;
+	}
 
-  @Override
-  public void accept(Visitor v)
-  {
-    v.visit(this);
-  }
+	@Override
+	public void accept(Visitor v) {
+		v.visit(this);
+	}
+
 }

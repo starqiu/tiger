@@ -86,7 +86,7 @@ public class Parser
     System.out.println("   The error exist in the line "+linenum+"\n");
     System.out.println("   The error near by the token "+tokenstr+"\n");
     System.out.println("       The thread aborted in the method "+classstr+"."+methodstr+"()"+"\n");
-    System.exit(1);
+    //System.exit(1);
     return;
   }
   private void error(String e,String b){
@@ -220,11 +220,14 @@ public class Parser
   // -> NotExp
   private ast.exp.T parseTimesExp()
   {
-	ast.exp.T exp = parseNotExp();
-    while (current.kind == Kind.TOKEN_NOT) {
+	 ast.exp.T exp = null;
+	if (current.kind == Kind.TOKEN_NOT) {
       advance();
+      exp = parseNotExp();
       exp = new Not(exp);
-    }
+    }else {
+      exp = parseNotExp();
+	}
     return exp;
   }
 

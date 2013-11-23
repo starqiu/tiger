@@ -10,7 +10,11 @@ import codegen.bytecode.stm.NewArray;
 public class PrettyPrintVisitor implements Visitor
 {
   private java.io.BufferedWriter writer;
-
+  
+  public PrettyPrintVisitor()
+  {
+  }
+  
   private void sayln(String s)
   {
     say(s);
@@ -97,18 +101,22 @@ public class PrettyPrintVisitor implements Visitor
   
   @Override
   public void visit(IAload s) {
+	  this.sayln("iaload");
   }
 
   @Override
   public void visit(IAstore s) {
+	  this.sayln("iastore");
   }
 
   @Override
   public void visit(Iadd s) {
+	  this.sayln("iadd");
   }
 
   @Override
   public void visit(Iand s) {
+	  this.sayln("iand");
   }
 
   @Override
@@ -177,10 +185,12 @@ public class PrettyPrintVisitor implements Visitor
   
   @Override
   public void visit(ArrayLength s) {
+	  this.sayln("arraylength");
   }
 
   @Override
   public void visit(NewArray s) {
+	  this.sayln("newarray int");
   }
 
   @Override
@@ -215,9 +225,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(codegen.bytecode.dec.Dec d)
   {
-	  d.type.accept(this);
-	  int index = 0;
-	  this.sayln("load "+d.id);
+	  return;
   }
 
   // method

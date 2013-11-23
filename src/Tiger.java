@@ -19,8 +19,8 @@ public class Tiger
     // ///////////////////////////////////////////////////////
     // handle command line arguments
     CommandLine cmd = new CommandLine();
-    String fname = "test/Factorial.java";//cmd.scan(args);
-    //String fname = "test/BubbleSort.java";
+    //String fname = "test/Factorial.java";//cmd.scan(args);
+    String fname = "test/Test.java";
 
     // /////////////////////////////////////////////////////
     // to test the pretty printer on the "test/Fac.java" program
