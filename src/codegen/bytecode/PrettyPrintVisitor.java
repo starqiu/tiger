@@ -1,5 +1,6 @@
 package codegen.bytecode;
 
+import control.Control;
 import codegen.bytecode.stm.ArrayLength;
 import codegen.bytecode.stm.IAload;
 import codegen.bytecode.stm.IAstore;
@@ -258,6 +259,7 @@ public class PrettyPrintVisitor implements Visitor
     try {
       this.writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(c.id + ".j")));
+      Control.bytecodeFiles.add(c.id);
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);
@@ -312,6 +314,7 @@ public class PrettyPrintVisitor implements Visitor
     try {
       this.writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(c.id + ".j")));
+      Control.bytecodeFiles.add(c.id);
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);

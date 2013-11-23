@@ -126,6 +126,9 @@ public class Tiger
     theAst.accept(elab);
 
     // code generation
+    String outputName = null;
+    String cplCmd=null;
+    Runtime rt = Runtime.getRuntime();
     switch (control.Control.codegen) {
     case Bytecode:
       codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
@@ -133,6 +136,17 @@ public class Tiger
       codegen.bytecode.program.T bytecodeAst = trans.program;
       codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
       bytecodeAst.accept(ppbc);
+      cplCmd = "java -jar jasmin.jar ";
+      for (String className:Control.bytecodeFiles) {
+    	  try {
+	  		rt.exec(cplCmd+className+".j");
+	  	  } catch (IOException e) {
+	  		e.printStackTrace();
+	  	  }
+	  	System.out.println("the result is: "+className+".class(in the root directory)");
+	  }
+      System.out.println("you can use this commod to see the result: java "
+    		  +Control.fileName.substring(Control.fileName.indexOf('/')+1,Control.fileName.indexOf('.')));
       break;
     case C:
       codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
@@ -140,6 +154,20 @@ public class Tiger
       codegen.C.program.T cAst = transC.program;
       codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
       cAst.accept(ppc);
+      if (Control.outputName != null){
+    	  outputName = Control.outputName;
+      }else if (Control.fileName != null){
+    	  outputName = Control.fileName + ".c";
+      }else{
+    	  outputName = "a.c";
+      }
+      System.out.println("the result is: "+outputName+".exe");
+      cplCmd = "gcc "+outputName+" runtime/runtime.c -o "+outputName+".exe";
+      try {
+  		rt.exec(cplCmd);
+  	  } catch (IOException e) {
+  		e.printStackTrace();
+  	  }
       break;
     case Dalvik:
       /*codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();
@@ -160,22 +188,6 @@ public class Tiger
     // file, or call java to run the bytecode file.
 	// or dalvik to run the dalvik bytecode.
     // Your code here:
-    String outputName = null;
-    if (Control.outputName != null){
-      outputName = Control.outputName;
-    }else if (Control.fileName != null){
-      outputName = Control.fileName + ".c";
-    }else{
-      outputName = "a.c";
-    }
-    Runtime rt = Runtime.getRuntime();
-    String cplCmd = "gcc "+outputName+" runtime/runtime.c -o "+outputName+".exe";
-    //String cplCmd = "gcc "+outputName+" runtime/runtime.c";
-    try {
-		rt.exec(cplCmd);
-	} catch (IOException e) {
-		e.printStackTrace();
-	}
 
     return;
   }
