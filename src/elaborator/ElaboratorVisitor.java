@@ -1,12 +1,10 @@
 package elaborator;
 
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import ast.Acceptable;
 import ast.exp.NewIntArray;
-import ast.exp.This;
 import ast.type.Boolean;
 import ast.type.Int;
 import ast.type.IntArray;
@@ -178,6 +176,7 @@ public class ElaboratorVisitor implements ast.Visitor
     this.type = type;
     // record this type on this node for future use.
     e.type = type;
+    
     return;
   }
 
@@ -298,14 +297,17 @@ public class ElaboratorVisitor implements ast.Visitor
 	      type = this.classTable.get(this.currentClass, s.id);
 	    if (type == null)
 	      error("can not find any declaraion about"+s.id+"!",s);
+	    if (!("@int[]".equals(type.toString()))) {
+	    	error("the type of the left and the right expression in Assign Array operator mismatch!",s);
+	    }
 	    s.index.accept(this);
 	    if (!("@int".equals(this.type.toString()))) {
 			error("the index expression of AssignArray should be Int type! ",s);
 		}
 	    s.exp.accept(this);
-	    if (!("@int[]".equals(type.toString()))) {
-	    	error("the type of the left and the right expression in Assign operator mismatch!",s);
-		}
+	    if (!("@int".equals(this.type.toString()))) {
+	    	error("the result of the right of AssignArray should be Int type! ",s);
+	    }
     
   }
 
@@ -398,6 +400,7 @@ public class ElaboratorVisitor implements ast.Visitor
     for (ast.stm.T s : m.stms)
       s.accept(this);
     m.retExp.accept(this);
+    this.methodTable.getTable().clear();
     return;
   }
 

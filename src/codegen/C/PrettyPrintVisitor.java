@@ -83,7 +83,7 @@ public class PrettyPrintVisitor implements Visitor
     this.say("(" + e.assign + "=");
     e.exp.accept(this);
     this.say(", ");
-    this.say(e.assign + "->vptr->" + e.id + "(" + e.assign);
+    this.say("f"+e.assign + "->vptr->" + e.id + "(" + e.assign);
     int size = e.args.size();
     if (size == 0) {
       this.say("))");
