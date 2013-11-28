@@ -283,13 +283,45 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(codegen.C.method.Method m)
   {
+	this.sayln("//gc's var of "+m.classId+"_"+m.id);
+	//generate arguments_gc_map
 	String f_arguments_gc_map ="char* "+m.classId+"_"+m.id+"_arguments_gc_map=\"";
-	String f_locals_gc_map ="char* "+m.classId+"_"+m.id+"_locals_gc_map=\"";
-	String f_gc_frame = "struct "+m.classId+"_"+m.id+"_gc_frame {\n"
-						+"  void *prev;// dynamic chain, pointing to f's caller's GC frame\n"
-						+"  char *arguments_gc_map;// should be assigned the value of f_arguments_gc_map\n"
-						+"  int *arguments_base_address;// address of the first argument\n"
-						+"  char *locals_gc_map; // should be assigned the value of f_locals_gc_map\n";
+	 for (codegen.C.dec.T d : m.formals) {
+	      codegen.C.dec.Dec dec = (codegen.C.dec.Dec) d;
+	      if ("@int".equals(dec.type.toString())) {
+	    	  f_arguments_gc_map+="0";
+	      }else {
+	    	  f_arguments_gc_map+="1";
+	      }
+	 }
+	 f_arguments_gc_map+="\";\n";
+	 this.say(f_arguments_gc_map);
+	 
+	//generate locals_gc_map and  gc_frame
+	 String f_locals_gc_map ="char* "+m.classId+"_"+m.id+"_locals_gc_map=\"";
+	 String f_gc_frame = "struct "+m.classId+"_"+m.id+"_gc_frame {\n"
+					 +"  void *prev;// dynamic chain, pointing to f's caller's GC frame\n"
+					 +"  char *arguments_gc_map;// should be assigned the value of f_arguments_gc_map\n"
+					 +"  int *arguments_base_address;// address of the first argument\n"
+					 +"  char *locals_gc_map; // should be assigned the value of f_locals_gc_map\n";
+	 for (codegen.C.dec.T d : m.locals) {
+	      codegen.C.dec.Dec dec = (codegen.C.dec.Dec) d;
+	      if ("@int".equals(dec.type.toString())) {
+	  		  f_gc_frame+="  int "+dec.id+";\n";
+	  		  f_locals_gc_map+="0";
+	  	  }else if ("@int[]".equals(dec.type.toString())) {
+	  		  f_gc_frame+="  int* "+dec.id+";\n";
+	  		  f_locals_gc_map+="1";
+	  	  }else {
+	  		  f_gc_frame+="  struct "+dec.type+"* "+dec.id+";\n";
+	  		  f_locals_gc_map+="1";
+	  	  }
+	 }
+    f_gc_frame+="};\n";
+    f_locals_gc_map+="\";\n"; 
+    this.say(f_locals_gc_map);
+    this.sayln(f_gc_frame);
+	 
     m.retType.accept(this);
     this.say(" " + m.classId + "_" + m.id + "(");
     int size = m.formals.size();
@@ -299,20 +331,11 @@ public class PrettyPrintVisitor implements Visitor
       dec.type.accept(this);
       this.say(" " + dec.id);
       
-      if ("@int".equals(dec.type.toString())) {
-    	  f_arguments_gc_map+="0";
-      }else if ("@int[]".equals(dec.type.toString())) {
-    	  f_arguments_gc_map+="1";
-      }else {
-    	  f_arguments_gc_map+="1";
-      }
-      
       if (size > 0)
     	  this.say(", ");
     }
     this.sayln(")");
     this.sayln("{");
-	f_arguments_gc_map+="\";\n";
 	
 	this.sayln("  // put the GC stack frame onto the call stack");
 	this.sayln("  struct "+m.classId+"_"+m.id+"_gc_frame frame;");
@@ -326,25 +349,13 @@ public class PrettyPrintVisitor implements Visitor
 	this.sayln("  frame.locals_gc_map = "+m.classId+"_"+m.id+"_locals_gc_map;\n");
 	this.sayln("  // initialize locals of this method");
 	
-    for (codegen.C.dec.T d : m.locals) {
+    /*for (codegen.C.dec.T d : m.locals) {
       codegen.C.dec.Dec dec = (codegen.C.dec.Dec) d;
       this.say("  ");
       dec.type.accept(this);
       this.say(" " + dec.id + ";\n");
-      if ("@int".equals(dec.type.toString())) {
-  		  f_gc_frame+="  int "+dec.id+";\n";
-  		  f_locals_gc_map+="0";
-  	  }else if ("@int[]".equals(dec.type.toString())) {
-  		  f_gc_frame+="  int* "+dec.id+";\n";
-  		  f_locals_gc_map+="1";
-  	  }else {
-  		  f_gc_frame+="  struct "+dec.type+"* "+dec.id+";\n";
-  		  f_locals_gc_map+="1";
-  	  }
     }
-    f_gc_frame+="};\n";
-    f_locals_gc_map+="\";\n";
-    this.sayln("");
+    this.sayln("");*/
     for (codegen.C.stm.T s : m.stms)
       s.accept(this);
     this.say("  return ");
@@ -352,9 +363,6 @@ public class PrettyPrintVisitor implements Visitor
     this.sayln(";");
     this.sayln("}");
     this.sayln("");
-    this.say(f_arguments_gc_map);
-    this.say(f_locals_gc_map);
-    this.say(f_gc_frame);
     return;
   }
 
