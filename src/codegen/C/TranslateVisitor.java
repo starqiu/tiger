@@ -1,5 +1,7 @@
 package codegen.C;
 
+import java.util.UUID;
+
 // Given a Java ast, translate it into a C ast and outputs it.
 
 public class TranslateVisitor implements ast.Visitor
@@ -132,6 +134,7 @@ public class TranslateVisitor implements ast.Visitor
   public void visit(ast.exp.NewObject e)
   {
     this.exp = new codegen.C.exp.NewObject(e.id);
+    ((codegen.C.exp.NewObject)this.exp).name = e.id +"_"+UUID.randomUUID();
     return;
   }
 
