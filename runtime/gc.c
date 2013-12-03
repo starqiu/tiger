@@ -4,7 +4,8 @@
 
 // The Gimple Garbage Collector.
 
-
+void Tiger_gc();
+void* forward(void* p);
 //===============================================================//
 // The Java Heap data structure.
 
@@ -37,20 +38,21 @@ void Tiger_heap_init (int heapSize)
 {
   // You should write 7 statement here:
   // #1: allocate a chunk of memory of size "heapSize" using "malloc"
-
+  char* p = (char*)malloc(heapSize);
+  memset(p,'\0',heapSize);
   // #2: initialize the "size" field, note that "size" field
   // is for semi-heap, but "heapSize" is for the whole heap.
-
+  heap.size=heapSize/2;
   // #3: initialize the "from" field (with what value?)
-
+  heap.from=p;
   // #4: initialize the "fromFree" field (with what value?)
-
+  heap.fromFree=heap.from;
   // #5: initialize the "to" field (with what value?)
-
+  heap.to=p+heap.size;
   // #6: initizlize the "toStart" field with NULL;
-
+  heap.toStart=NULL;
   // #7: initialize the "toNext" field with NULL;
-
+  heap.toNext=NULL;
   return;
 }
 
@@ -100,21 +102,21 @@ p---->| v_0          | \
 //           the Java heap.)
 void *Tiger_new (void *vtable, int size)
 {
-  // You should write 4 statements for this function.
-  // #1: "malloc" a chunk of memory (be careful of the size) :
-  //int* p = (char*)malloc(size+4);
-	int *p=head;
-	head+=(size+4);
-	if(head>Maxsize){
+	char* p=heap.fromFree;
+	heap.fromFree+=(16+size);
+	if(heap.fromFree>=(heap.from+heap.size)){
 		Tiger_gc();
-		head+=(size+4);
+		p=heap.fromFree;
+		heap.fromFree+=(16+size);
+		if(heap.fromFree>=(heap.from+heap.size)){
+			printf("OutOfMemory");
+			exit(-1);
+		}
 	}
-  // #2: clear this chunk of memory (zero off it):
+	*p=vtable;
+	*(p+4)=0;
 
-  // #3: set up the "vptr" pointer to the value of "vtable":
-  *p = vtable;
-  // #4: return the pointer 
-  return p;
+	return p+16;
 }
 
 // "new" an array of size "length", do necessary
@@ -155,40 +157,47 @@ void *Tiger_new_array (int length)
 {
   // You can use the C "malloc" facilities, as above.
   // Your code here:
-  //int* p = (int*)malloc(length+4);
-  int *p=head;
-  head+=(size*4+4);
-  if(head>Maxsize){
-  		Tiger_gc();
-  		head+=(size*4+4);
-  }
-  *p=length;
-  return p+1;
-}
+	int* p=(int* )heap.fromFree;
+	heap.fromFree+=(16+length*4);
+	if(heap.fromFree>=(heap.from+heap.size)){
+		Tiger_gc();
+		p=(int* )heap.fromFree;
+		heap.fromFree+=(16+length*4);
+		if(heap.fromFree>=(heap.from+heap.size)){
+			printf("OutOfMemory");
+			exit(-1);
+		}
+	}
+	*(p+1)=1;
+	*(p+2)=length;
 
-void Tiger_heap_init(){
-	memset(fromHeap,'\0',Maxsize);
-	memset(toHeap,'\0',Maxsize);
-	head=fromHeap;
+	return p+4;
 }
 
 //===============================================================//
 // The Gimple Garbage Collector
 // Lab 4, exercise 12:
 // A copying collector based-on Cheney's algorithm.
-static void Tiger_gc(void* pre) {
+void Tiger_gc() {
 	// Your code here:
-	/*void* scan ,next;
-	scan=next=toheap;
-	while(pre){
-		pre=forward(pre);
+	heap.toStart=heap.toNext=heap.to;
+	while(prev != NULL){
+		prev=forward(prev);
 	}
-	while(scan<next){
+	while(heap.toStart<heap.toNext){
+
+		heap.toStart+=sizeof(heap.toStart);
 	}
-	scan+=sizeof(scan);*/
 }
 
-/*void* forward(void* p){
+void* forward(void* p){
+	if(p>heap.from &&p<(heap.from+heap.size)){
+		if((p+4)>heap.to &&(p+4)<(heap.to+heap.size)){
+			return p+4;
+		}else{
+
+		}
+	}
 	return p;
-}*/
+}
 
