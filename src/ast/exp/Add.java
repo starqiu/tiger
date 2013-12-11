@@ -1,22 +1,26 @@
 package ast.exp;
 
-import ast.Visitor;
-
 public class Add extends T
 {
-  public T left;
-  public T right;
+	public T left;
+	public T right;
 
-  public Add(T left, T right)
-  {
-    this.left = left;
-    this.right = right;
-  }
+	public Add(T left, T right) 
+	{
+		this.left = left;
+		this.right = right;
+	}
 
-  @Override
-  public void accept(Visitor v)
-  {
-    v.visit(this);
-    return;
-  }
+	public Add(T left, T right, int lineNum)
+	{
+		this(left, right);
+		this.lineNum = lineNum;
+	}
+	
+	@Override
+	public void accept(ast.Visitor v) 
+	{
+		v.visit(this);
+		return;
+	}
 }

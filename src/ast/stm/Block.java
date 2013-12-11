@@ -1,17 +1,19 @@
 package ast.stm;
 
-public class Block extends T
+import java.util.LinkedList;
+
+public class Block extends T 
 {
-  public java.util.LinkedList<T> stms;
+	public LinkedList<T> stms;
 
-  public Block(java.util.LinkedList<T> stms)
-  {
-    this.stms = stms;
-  }
+	public Block(LinkedList<T> stms) 
+	{
+		this.stms = stms;
+	}
 
-  @Override
-  public void accept(ast.Visitor v)
-  {
-    v.visit(this);
-  }
+	@Override
+	public void accept(ast.Visitor v) 
+	{
+		v.visit(this);
+	}
 }

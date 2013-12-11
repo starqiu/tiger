@@ -25,7 +25,9 @@ public interface Visitor
 
   public void visit(ast.exp.Not e);
 
-  public void visit(ast.exp.Num e);
+	public void visit(ast.exp.Num e);
+	
+	public void visit(ast.exp.Paren e);
 
   public void visit(ast.exp.Sub e);
 

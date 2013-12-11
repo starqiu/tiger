@@ -2,16 +2,16 @@ package codegen.bytecode.stm;
 
 import codegen.bytecode.Visitor;
 
-public class NewArray extends T {
-	public String type = "int";
-
-	public NewArray(String type) {
-		this.type = type;
+// create new array which is left on the stack
+public class NewArray extends T
+{
+	public NewArray()
+	{
 	}
-
+	
 	@Override
-	public void accept(Visitor v) {
+	public void accept(Visitor v)
+	{
 		v.visit(this);
 	}
-
 }

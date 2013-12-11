@@ -6,10 +6,10 @@ public class PrettyPrintVisitor implements Visitor
 {
   private int indentLevel;
 
-  public PrettyPrintVisitor()
-  {
-    this.indentLevel = 4;
-  }
+	public PrettyPrintVisitor() 
+	{
+		this.indentLevel = 0;
+	}
 
   private void indent()
   {
@@ -156,14 +156,25 @@ public class PrettyPrintVisitor implements Visitor
     return;
   }
 
-  @Override
-  public void visit(ast.exp.Sub e)
-  {
-    e.left.accept(this);
-    this.say(" - ");
-    e.right.accept(this);
-    return;
-  }
+	// (exp)
+	@Override
+	public void visit(ast.exp.Paren e) 
+	{
+		this.say("(");
+		e.exp.accept(this);
+		this.say(")");
+		return;
+	}
+	
+	// left - right
+	@Override
+	public void visit(ast.exp.Sub e)
+	{
+		e.left.accept(this);
+		this.say(" - ");
+		e.right.accept(this);
+		return;
+	}
 
   @Override
   public void visit(ast.exp.This e)
@@ -197,47 +208,83 @@ public class PrettyPrintVisitor implements Visitor
     return;
   }
 
-  @Override
-  public void visit(ast.stm.AssignArray s)
-  {
-	  this.printSpaces();
-	  this.say(s.id+"[");
-	  s.index.accept(this);
-	  this.say("] = ");
-	  s.exp.accept(this);
-	  this.sayln(";");
-  }
+	// id[index] = Exp;
+	@Override
+	public void visit(ast.stm.AssignArray s) 
+	{
+		this.printSpaces();
+		this.say(s.id.id + "[");
+		s.index.accept(this);
+		this.say("] = ");
+		s.exp.accept(this);
+		this.say(";");
+		this.sayln("");
+		return;
+	}
 
-  @Override
-  public void visit(ast.stm.Block s)
-  {
-	  this.sayln("{");
-	  for (ast.stm.T b : s.stms) {
-	      b.accept(this);
-	  }
-	  this.unIndent();
-	  this.printSpaces();
-	  this.sayln("}");
-	  this.indent();
-  }
+	// { Statement* }
+	@Override
+	public void visit(ast.stm.Block s) 
+	{
+		this.printSpaces();
+		this.sayln("{");
+		this.indent();
+		for(ast.stm.T b : s.stms)
+			b.accept(this);
+		this.unIndent();
+		this.printSpaces();
+		this.say("}");
+		this.sayln("");
+		return;
+	}
 
-  @Override
-  public void visit(ast.stm.If s)
-  {
-    this.printSpaces();
-    this.say("if (");
-    s.condition.accept(this);
-    this.sayln(")");
-    this.indent();
-    s.thenn.accept(this);
-    this.unIndent();
-    this.printSpaces();
-    this.sayln("else");
-    this.indent();
-    s.elsee.accept(this);
-    this.unIndent();
-    return;
-  }
+	// if(condition) 
+	//		thenn 
+	// else 
+	//		elsee
+	@Override
+	public void visit(ast.stm.If s) 
+	{
+		this.printSpaces();
+		this.say("if(");
+		s.condition.accept(this);
+		this.sayln(")");
+		if(!s.thenn.getClass().toString().equals("class ast.stm.Block"))
+		{
+			this.indent();
+			s.thenn.accept(this);
+			this.unIndent();
+			this.printSpaces();
+			this.sayln("else");
+			if(!s.elsee.getClass().toString().equals("class ast.stm.Block"))
+			{
+				this.indent();
+				s.elsee.accept(this);
+				this.unIndent();
+			}
+			else
+			{
+				s.elsee.accept(this);
+			}
+		}
+		else
+		{
+			s.thenn.accept(this);
+			this.printSpaces();
+			this.sayln("else");
+			if(!s.elsee.getClass().toString().equals("class ast.stm.Block"))
+			{
+				this.indent();
+				s.elsee.accept(this);
+				this.unIndent();
+			}
+			else
+			{
+				s.elsee.accept(this);
+			}
+		}
+		return;
+	}
 
   @Override
   public void visit(ast.stm.Print s)
@@ -249,30 +296,42 @@ public class PrettyPrintVisitor implements Visitor
     return;
   }
 
-  @Override
-  public void visit(ast.stm.While s)
-  {
-	  this.printSpaces();
-	  this.say("while (");
-	  s.condition.accept(this);
-	  this.sayln(")");
-	  this.indent();
-	  s.body.accept(this);
-	  this.unIndent();
-  }
+	// while(condition) 
+	// 		body
+	@Override
+	public void visit(ast.stm.While s) 
+	{
+		this.printSpaces();
+		this.say("while(");
+		s.condition.accept(this);
+		this.sayln(")");
+		if(!s.body.getClass().toString().equals("class ast.stm.Block"))
+		{
+			this.indent();
+			s.body.accept(this);
+			this.unIndent();
+		}
+		else
+		{
+			s.body.accept(this);
+		}
+		return;
+	}
 
-  // type
-  @Override
-  public void visit(ast.type.Boolean t)
-  {
-	  this.say("bollean");
-  }
+	// type
+	// boolean
+	@Override
+	public void visit(ast.type.Boolean t) 
+	{
+		this.say("boolean");
+	}
 
-  @Override
-  public void visit(ast.type.Class t)
-  {
-	  this.say("class "+t.id);
-  }
+	// id
+	@Override
+	public void visit(ast.type.Class t) 
+	{
+		this.say(t.id);
+	}
 
   @Override
   public void visit(ast.type.Int t)
@@ -298,7 +357,8 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(ast.method.Method m)
   {
-    this.say("  public ");
+	this.printSpaces();
+    this.say("public ");
     m.retType.accept(this);
     this.say(" " + m.id + "(");
     this.sayLoop4Args(m.formals);
@@ -308,72 +368,112 @@ public class PrettyPrintVisitor implements Visitor
       this.say(" " + dec.id + ", ");
     }*/
     this.sayln(")");
-    this.sayln("  {");
-    
-    for (ast.dec.T d : m.locals) {
-      ast.dec.Dec dec = (ast.dec.Dec) d;
-      this.say("    ");
-      dec.type.accept(this);
-      this.say(" " + dec.id + ";\n");
-    }
-    this.sayln("");
-    for (ast.stm.T s : m.stms)
-      s.accept(this);
-    this.say("    return ");
-    m.retExp.accept(this);
-    this.sayln(";");
-    this.sayln("  }");
-    return;
-  }
+		this.printSpaces();
+		this.sayln("{");
 
-  // class
-  @Override
-  public void visit(ast.classs.Class c)
-  {
-    this.say("class " + c.id);
-    if (c.extendss != null)
-      this.sayln(" extends " + c.extendss);
-    else
-      this.sayln("");
+		this.indent();
+		for(ast.dec.T d : m.locals)
+		{
+			this.printSpaces();
+			d.accept(this);
+			this.sayln(";");
+		}
+		if(!m.locals.isEmpty())
+			this.sayln("");
+		
+		for(ast.stm.T s : m.stms)
+			s.accept(this);
+		
+		this.printSpaces();
+		this.say("return ");
+		m.retExp.accept(this);
+		this.say(";");
+		this.sayln("");
+		this.unIndent();
+		this.printSpaces();
+		this.sayln("}");
+		return;
+	}
 
-    this.sayln("{");
+	// Class -> class id 
+	//			{ 
+	//				VarDecl* 
+	//				MethodDecl* 
+	//			}
+	// 		 -> class id extends id 
+	//			{ 
+	//				VarDecl* 
+	//				MethodDecl* 
+	//			}
+	@Override
+	public void visit(ast.classs.Class c) 
+	{
+		this.say("class " + c.id);
+		if(c.extendss != null)
+			this.sayln(" extends " + c.extendss);
+		else
+			this.sayln("");
 
-    for (ast.dec.T d : c.decs) {
-      ast.dec.Dec dec = (ast.dec.Dec) d;
-      this.say("  ");
-      dec.type.accept(this);
-      this.say(" ");
-      this.sayln(dec.id + ";");
-    }
-    for (ast.method.T mthd : c.methods)
-      mthd.accept(this);
-    this.sayln("}");
-    return;
-  }
+		this.sayln("{");
+		this.indent();
+		for(ast.dec.T d : c.decs) 
+		{
+			this.printSpaces();
+			d.accept(this);
+			this.say(";");
+			this.sayln("");
+		}
+		if(!c.decs.isEmpty())
+			this.sayln("");
+		
+		for(ast.method.T mthd : c.methods)
+			mthd.accept(this);
+		
+		this.unIndent();
+		this.printSpaces();
+		this.sayln("}");
+		return;
+	}
 
-  // main class
-  @Override
-  public void visit(ast.mainClass.MainClass c)
-  {
-    this.sayln("class " + c.id);
-    this.sayln("{");
-    this.sayln("  public static void main (String [] " + c.arg + ")");
-    this.sayln("  {");
-    c.stm.accept(this);
-    this.sayln("  }");
-    this.sayln("}");
-    return;
-  }
+	// MainClass -> class id
+    //              {
+	//                	public static void main(String[] id )
+	//                	{
+	//                		Statement
+	//                	}
+	//               }
+	@Override
+	public void visit(ast.mainClass.MainClass c) 
+	{
+		this.sayln("class " + c.id);
+		this.sayln("{");
+		this.indent();
+		this.printSpaces();
+		this.sayln("public static void main(String[] " + c.arg + ")");
+		this.printSpaces();
+		this.sayln("{");
+		this.indent();
+		c.stm.accept(this);
+		this.unIndent();
+		this.printSpaces();
+		this.sayln("}");
+		this.unIndent();
+		this.printSpaces();
+		this.sayln("}");
+		return;
+	}
 
-  // program
-  @Override
-  public void visit(ast.program.Program p)
-  {
-    p.mainClass.accept(this);
-    this.sayln("");
-    for (ast.classs.T classs : p.classes) {
-      classs.accept(this);
-    }
-    System.out.println("\n\n");
-  }
+	// Program -> MainClass ClassDecl*
+	@Override
+	public void visit(ast.program.Program p) 
+	{
+		p.mainClass.accept(this);
+		this.sayln("");
+		for(ast.classs.T classs : p.classes) 
+		{
+			classs.accept(this);
+		}
+		this.sayln("");
+		return;
+	}
 }
