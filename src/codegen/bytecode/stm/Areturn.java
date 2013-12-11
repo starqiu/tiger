@@ -2,15 +2,16 @@ package codegen.bytecode.stm;
 
 import codegen.bytecode.Visitor;
 
-public class Areturn extends T
+// return reference from method
+public class Areturn extends T 
 {
-  public Areturn()
-  {
-  }
+	public Areturn() 
+	{
+	}
 
-  @Override
-  public void accept(Visitor v)
-  {
-    v.visit(this);
-  }
+	@Override
+	public void accept(Visitor v) 
+	{
+		v.visit(this);
+	}
 }

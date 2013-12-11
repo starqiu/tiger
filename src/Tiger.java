@@ -1,194 +1,254 @@
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 
 import lexer.Lexer;
 import lexer.Token;
 import lexer.Token.Kind;
-import parser.Parser;
 import control.CommandLine;
 import control.Control;
+import parser.Parser;
 
-public class Tiger
+public class Tiger 
 {
-  public static void main(String[] args)
-  {
-	BufferedInputStream fstream;
-    Parser parser;
+	public static void main(String[] args) 
+	{
+		PushbackReader fstream;
+		Parser parser;
 
-    // ///////////////////////////////////////////////////////
-    // handle command line arguments
-    CommandLine cmd = new CommandLine();
-    //String fname = "test/Factorial.java";//cmd.scan(args);
-    String fname = "test/Test.java";
+		// ///////////////////////////////////////////////////////
+		// handle command line arguments
+		CommandLine cmd = new CommandLine();
+		String fname = cmd.scan(args);
+		// /////////////////////////////////////////////////////
+		// to test the pretty printer on the "test/Fac.java" program
+		if(control.Control.testFac) 
+		{
+			System.out.println("Testing the Tiger compiler on Fac.java:");
+			ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
+			ast.Fac.prog.accept(pp);
+//			ast.Fac.prog1.accept(pp);
+			
+			// elaborate the given program, this step is necessary
+		    // for that it will annotate the AST with some
+		    // informations used by later phase
+		    elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
+		    ast.Fac.prog.accept(elab);
 
-    // /////////////////////////////////////////////////////
-    // to test the pretty printer on the "test/Fac.java" program
-    if (control.Control.testFac) {
-      System.out.println("Testing the Tiger compiler on Fac.java starting:");
-      ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
-      ast.Fac.prog.accept(pp);
+		    // Compile this program to C.
+		    System.out.println("Translating the program to C:");
+		    codegen.C.TranslateVisitor trans2C = new codegen.C.TranslateVisitor();
+		    // pass this visitor to the "Fac.java" program.
+		    ast.Fac.prog.accept(trans2C);
+		    // this visitor will return an AST for C.
+		    codegen.C.program.T cast = trans2C.program;
+		    // output the AST for C.
+		    codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
+		    cast.accept(ppc);
+			
+			System.out.println("Testing the Tiger compiler on Fac.java is finished.");
+			System.out.println();
+			System.exit(1);
+		}
 
-      // elaborate the given program, this step is necessary
-      // for that it will annotate the AST with some
-      // informations used by later phase.
-      elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
-      ast.Fac.prog.accept(elab);
+		if(fname == null) 
+		{
+			cmd.usage();
+			return;
+		}
+		Control.fileName = fname;
+		
+		// /////////////////////////////////////////////////////
+		// it would be helpful to be able to test the lexer
+		// independently.
+		if(control.Control.testlexer) 
+		{
+			System.out.println("Testing the lexer. All tokens:");
+			try 
+			{
+				fstream = new PushbackReader(new FileReader(fname));
+				Lexer lexer = new Lexer(fname, fstream);
+				Token token = lexer.nextToken();
 
-      // Compile this program to C.
-      System.out.println("code generation starting");
-   // code generation
-      switch (control.Control.codegen) {
-      case Bytecode:
-        System.out.println("bytecode codegen");            
-        codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
-        ast.Fac.prog.accept(trans);
-        codegen.bytecode.program.T bytecodeAst = trans.program;
-        codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
-        bytecodeAst.accept(ppbc);
-        break;
-      case C:
-        System.out.println("C codegen");
-        codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
-        ast.Fac.prog.accept(transC);
-        codegen.C.program.T cAst = transC.program;
-        codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
-        cAst.accept(ppc);
-        break;
-      case Dalvik:
-        /*codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();
-        ast.Fac.prog.accept(transDalvik);
-        codegen.dalvik.program.T dalvikAst = transDalvik.program;
-        codegen.dalvik.PrettyPrintVisitor ppDalvik = new codegen.dalvik.PrettyPrintVisitor();
-        dalvikAst.accept(ppDalvik);*/
-        break;
-      case X86:
-        // similar
-        break;
-      default:
-        break;
-      }
-      System.out.println("Testing the Tiger compiler on Fac.java finished.");
-      System.exit(1);
-    }
+				while(token.kind != Kind.TOKEN_EOF) 
+				{
+					System.out.println(token.toString());
+					token = lexer.nextToken();
+				}
+				System.out.println(token.toString());
+				fstream.close();
+			} 
+			catch(Exception e) 
+			{
+				e.printStackTrace();
+			}
 
-    if (fname == null) {
-      cmd.usage();
-      return;
-    }
-    Control.fileName = fname;
+			System.out.println("Testing the lexer is finished.");
+			System.out.println();
+		    System.exit(1);
+		}
 
-    // /////////////////////////////////////////////////////
-    // it would be helpful to be able to test the lexer
-    // independently.
-    if (control.Control.testlexer) {
-      System.out.println("Testing the lexer. All tokens:");
-      try {
-        fstream = new BufferedInputStream(new FileInputStream(fname));
-        Lexer lexer = new Lexer(fname, fstream);
-        Token token = lexer.nextToken();
-        while (token.kind != Kind.TOKEN_EOF) {
-          System.out.println(token.toString());
-          token = lexer.nextToken();
-        }
-        fstream.close();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      System.exit(1);
-    }
+		// /////////////////////////////////////////////////////////
+		// normal compilation phases.
+		ast.program.T theAst = null;
 
-    // /////////////////////////////////////////////////////////
-    // normal compilation phases.
-    ast.program.T theAst = null;
+		// parsing the file, get an AST.
+		try 
+		{
+			fstream = new PushbackReader(new FileReader(fname));
+			parser = new Parser(fname, fstream);
 
-    // parsing the file, get an AST.
-    try {
-      fstream = new BufferedInputStream(new FileInputStream(fname));
-      parser = new Parser(fname, fstream);
+			System.out.println("Testing the parser:");
+			theAst = parser.parse();
 
-      theAst = parser.parse();
+			fstream.close();
+			System.out.println("Testing the parser is finished.");
+			System.out.println();
+		} 
+		catch(Exception e) 
+		{
+			e.printStackTrace();
+			System.exit(1);
+		}
 
-      fstream.close();
-    } catch (Exception e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
+		// pretty printing the AST, if necessary
+		if(control.Control.dumpAst) 
+		{
+			ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
+			theAst.accept(pp);
+		}
 
-    // pretty printing the AST, if necessary
-    if (control.Control.dumpAst) {
-      ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
-      theAst.accept(pp);
-    }
+		// elaborate the AST, report all possible errors.
+		elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
+		theAst.accept(elab);
 
-    // elaborate the AST, report all possible errors.
-    elaborator.ElaboratorVisitor elab = new elaborator.ElaboratorVisitor();
-    theAst.accept(elab);
-
-    // code generation
-    String outputName = null;
-    String cplCmd=null;
-    Runtime rt = Runtime.getRuntime();
-    switch (control.Control.codegen) {
-    case Bytecode:
-      codegen.bytecode.TranslateVisitor trans = new codegen.bytecode.TranslateVisitor();
-      theAst.accept(trans);
-      codegen.bytecode.program.T bytecodeAst = trans.program;
-      codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
-      bytecodeAst.accept(ppbc);
-      cplCmd = "java -jar jasmin.jar ";
-      for (String className:Control.bytecodeFiles) {
-    	  try {
-	  		rt.exec(cplCmd+className+".j");
-	  	  } catch (IOException e) {
-	  		e.printStackTrace();
-	  	  }
-	  	System.out.println("the result is: "+className+".class(in the root directory)");
-	  }
-      System.out.println("you can use this commod to see the result: java "
-    		  +Control.fileName.substring(Control.fileName.indexOf('/')+1,Control.fileName.indexOf('.')));
-      break;
-    case C:
-      codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
-      theAst.accept(transC);
-      codegen.C.program.T cAst = transC.program;
-      codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
-      cAst.accept(ppc);
-      if (Control.outputName != null){
-    	  outputName = Control.outputName;
-      }else if (Control.fileName != null){
-    	  outputName = Control.fileName + ".c";
-      }else{
-    	  outputName = "a.c";
-      }
-      System.out.println("the result is: "+outputName+".exe");
-      cplCmd = "gcc "+outputName+" runtime/runtime.c -o "+outputName+".exe";
-      try {
-  		rt.exec(cplCmd);
-  	  } catch (IOException e) {
-  		e.printStackTrace();
-  	  }
-      break;
-    case Dalvik:
-      /*codegen.dalvik.TranslateVisitor transDalvik = new codegen.dalvik.TranslateVisitor();
-      theAst.accept(transDalvik);
-      codegen.dalvik.program.T dalvikAst = transDalvik.program;
-      codegen.dalvik.PrettyPrintVisitor ppDalvik = new codegen.dalvik.PrettyPrintVisitor();
-      dalvikAst.accept(ppDalvik);*/
-      break;
-    case X86:
-      // similar
-      break;
-    default:
-      break;
-    }
-    
-    // Lab3, exercise 6: add some glue code to
-    // call gcc to compile the generated C or x86
-    // file, or call java to run the bytecode file.
-	// or dalvik to run the dalvik bytecode.
-    // Your code here:
-
-    return;
-  }
+		codegen.bytecode.TranslateVisitor trans = null;
+		
+		// code generation
+	    switch(control.Control.codegen) 
+	    {
+	    case Bytecode:
+	      trans = new codegen.bytecode.TranslateVisitor();
+	      theAst.accept(trans);
+	      codegen.bytecode.program.T bytecodeAst = trans.program;
+	      codegen.bytecode.PrettyPrintVisitor ppbc = new codegen.bytecode.PrettyPrintVisitor();
+	      bytecodeAst.accept(ppbc);
+	      break;
+	    case C:
+	      codegen.C.TranslateVisitor transC = new codegen.C.TranslateVisitor();
+	      theAst.accept(transC);
+	      codegen.C.program.T cAst = transC.program;
+	      codegen.C.PrettyPrintVisitor ppc = new codegen.C.PrettyPrintVisitor();
+	      cAst.accept(ppc);
+	      break;
+	    case X86:
+	      // similar
+	      break;
+	    default:
+	      break;
+	    }
+	    
+	    // Lab3, exercise 6: add some glue code to
+	    // call gcc to compile the generated C or x86
+	    // file, or call java to run the bytecode file
+	    // Your code:
+		try 
+		{
+			switch(control.Control.codegen)
+			{
+			case Bytecode:
+			{
+				System.out.println("\nJava running the generated bytecode file:");
+				BufferedReader br= null;
+				String out = null;
+				boolean exitt = false;
+				
+				codegen.bytecode.program.Program program = (codegen.bytecode.program.Program)trans.program;
+				codegen.bytecode.mainClass.MainClass mainClass = (codegen.bytecode.mainClass.MainClass)program.mainClass;
+				String command1 = "java -jar jasmin.jar test/" + mainClass.id + ".j";
+				Process pro1 = Runtime.getRuntime().exec(command1);
+				br = new BufferedReader(new InputStreamReader(pro1.getErrorStream()));
+				while((out = br.readLine()) != null)
+				{
+					exitt = true;
+					System.out.println(out);
+				}
+				if(exitt)
+					System.exit(1);
+				
+				for(codegen.bytecode.classs.T c : program.classes)
+				{
+					codegen.bytecode.classs.Class cc = (codegen.bytecode.classs.Class)c;
+					String command2 = "java -jar jasmin.jar test/" + cc.id + ".j";
+					Process pro2 = Runtime.getRuntime().exec(command2);
+					br = new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
+					while((out = br.readLine()) != null)
+					{
+						exitt = true;
+						System.out.println(out);
+					}
+					if(exitt)
+						System.exit(1);
+				}
+				
+				String command3 = "java " + mainClass.id;
+				Process pro3 = Runtime.getRuntime().exec(command3);
+				br = new BufferedReader(new InputStreamReader(pro3.getInputStream()));
+				while((out = br.readLine()) != null)
+				{
+					System.out.println(out);
+				}
+				
+				System.out.println("Java running is finished.");
+				break;
+			}
+			case C:
+			{
+				System.out.println("\nGCC compiling the generated C file:");
+				BufferedReader br= null;
+				String out = null;
+				boolean exitt = false;
+				
+				String command1 = "gcc -c " + fname + ".c";
+				Process pro1 = Runtime.getRuntime().exec(command1);
+				br = new BufferedReader(new InputStreamReader(pro1.getErrorStream()));
+				while((out = br.readLine()) != null)
+				{
+					exitt = true;
+					System.out.println(out);
+				}
+				if(exitt)
+					System.exit(1);
+				
+				String command2 = "gcc " + fname + ".c runtime/runtime.c -o "+fname+".exe";
+				Process pro2 = Runtime.getRuntime().exec(command2);
+				br = new BufferedReader(new InputStreamReader(pro2.getErrorStream()));
+				while((out = br.readLine()) != null)
+				{
+					exitt = true;
+					System.out.println(out);
+				}
+				if(exitt)
+					System.exit(1);
+				
+				String command3 = fname+".exe";
+				Process pro3 = Runtime.getRuntime().exec(command3);
+				br = new BufferedReader(new InputStreamReader(pro3.getInputStream()));
+				while((out = br.readLine()) != null)
+				{
+					System.out.println(out);
+				}
+				
+				System.out.println("GCC compiling is finished.");
+				break;
+			}
+			default:
+				break;
+			}
+		} 
+		catch(IOException e)
+		{
+			e.printStackTrace();
+			System.exit(1);
+		}
+		return;
+	}
 }

@@ -2,15 +2,16 @@ package codegen.bytecode.stm;
 
 import codegen.bytecode.Visitor;
 
-public class Ireturn extends T
+// return int or boolean from method
+public class Ireturn extends T 
 {
-  public Ireturn()
-  {
-  }
+	public Ireturn() 
+	{
+	}
 
-  @Override
-  public void accept(Visitor v)
-  {
-    v.visit(this);
-  }
+	@Override
+	public void accept(Visitor v)
+	{
+		v.visit(this);
+	}
 }

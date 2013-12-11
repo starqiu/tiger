@@ -1,226 +1,254 @@
 package lexer;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.PushbackReader;
 
 import util.Todo;
-
 import lexer.Token.Kind;
-import util.*;
 
 public class Lexer
 {
-  public static final int maxtoken = 20;
-  String fname; // the input file name to be compiled
-  BufferedInputStream fstream; // input stream for the above file
-  int lineNum;
-  String buf =null ;
- 
-  //BufferedReader breader;
+	String fname; // the input file name to be compiled
+	PushbackReader fstream;
+	Integer lineNum;
+	MyMap map;
+  
+	public Lexer(String fname, PushbackReader fstream)
+	{
+		this.fname = fname;
+		this.fstream = fstream;
+		this.lineNum = 1;
+		this.map = new MyMap();
+	}
 
-  public Lexer(String fname, BufferedInputStream fstream)
-  {
-    this.fname = fname;
-    this.fstream = fstream;
-    this.lineNum = 1;
-  }
-  public int bfRead(){
-	 try {
-		return this.fstream.read();
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
+	// When called, return the next token (refer to the code "Token.java")
+	// from the input stream.
+	// Return TOKEN_EOF when reaching the end of the input stream.
+	private Token nextTokenInternal() throws Exception
+	{
+		int curChar = this.fstream.read();
+		if(curChar == -1)
+			return new Token(Kind.TOKEN_EOF, this.lineNum);
+
+		// skip all kinds of "blanks"
+		while((char)curChar == ' ' || (char)curChar == '\t' || (char)curChar == '\n' || (char)curChar == '\r') 
+		{
+			if((char)curChar == '\n')// the line break of Linux is \n
+				this.lineNum++;
+			else if((char)curChar == '\r')// the line break of Windows is \r\n
+			{
+				curChar = this.fstream.read();
+				this.lineNum++;
+			}
+			curChar = this.fstream.read();
+		}
+		if(curChar == -1)
+			return new Token(Kind.TOKEN_EOF, this.lineNum);
+   
+		switch((char)curChar) 
+		{
+		case '+':
+			return new Token(Kind.TOKEN_ADD, this.lineNum, "+");
+		case '&':
+			curChar = this.fstream.read();
+			if((char)curChar == '&')
+				return new Token(Kind.TOKEN_AND, this.lineNum, "&&");
+			else
+			{
+				System.out.println(this.fname + ": at line " + this.lineNum + ": Expect: '&' after '&'");
+				new Todo();
+				return null;
+			}
+		case '=':
+			return new Token(Kind.TOKEN_ASSIGN, this.lineNum, "=");
+		case ',':
+			return new Token(Kind.TOKEN_COMMER, this.lineNum, ",");
+		case '.':
+			return new Token(Kind.TOKEN_DOT, this.lineNum, ".");
+		case '{':
+			return new Token(Kind.TOKEN_LBRACE, this.lineNum, "{");
+		case '[':
+			return new Token(Kind.TOKEN_LBRACK, this.lineNum, "[");
+		case '(':
+			return new Token(Kind.TOKEN_LPAREN, this.lineNum, "(");
+		case '<':
+			return new Token(Kind.TOKEN_LT, this.lineNum, "<");
+		case '!':
+			return new Token(Kind.TOKEN_NOT, this.lineNum, "!");
+		case '}':
+			return new Token(Kind.TOKEN_RBRACE, this.lineNum, "}");
+		case ']':
+			return new Token(Kind.TOKEN_RBRACK, this.lineNum, "]");
+		case ')':
+			return new Token(Kind.TOKEN_RPAREN, this.lineNum, ")");
+		case ';':
+			return new Token(Kind.TOKEN_SEMI, this.lineNum, ";");
+		case '/':
+		{
+			int currentLine = this.lineNum;
+			curChar = this.fstream.read();
+			if((char)curChar != '/' && (char)curChar != '*')
+			{
+				System.out.println(this.fname + ": at line " + currentLine + ": Expect: '/' or '*' after '/'");
+				new Todo();
+				return null;
+			}
+			else if((char)curChar == '/')
+			{
+				do
+				{
+					curChar = this.fstream.read();
+				}while(curChar != -1 && (char)curChar != '\n' && (char)curChar != '\r');
+				
+				this.lineNum++;
+				
+				if(curChar == -1)
+					this.lineNum--;
+				else if((char)curChar == '\r')
+					curChar = this.fstream.read();// skip '\n'
+				
+				return new Token(Kind.TOKEN_NOTE, currentLine, "//");
+			}
+			else if((char)curChar == '*')
+			{
+				curChar = this.fstream.read();
+				while(curChar != -1 && (char)curChar != '*')
+				{
+					curChar = this.fstream.read();
+					if((char)curChar == '\n')
+					{
+						this.lineNum++;
+						curChar = this.fstream.read();
+					}
+					else if((char)curChar == '\r')
+					{
+						this.lineNum++;
+						curChar = this.fstream.read();
+						curChar = this.fstream.read();
+					}
+				}
+				
+				if(curChar == -1)
+				{
+					System.out.println(this.fname + ": at line " + currentLine + ": Expect: \"*/\"");
+					new Todo();
+					return null;
+				}
+				else if((char)curChar == '*')
+				{
+					curChar = this.fstream.read();// skip '/'
+					if((char)curChar == '/')
+						return new Token(Kind.TOKEN_NOTE, currentLine, "/**/");
+					else
+					{
+						System.out.println(this.fname + ": at line " + currentLine + ": Expect: \"*/\"");
+						new Todo();
+						return null;
+					}
+				}
+			}
+		}
+		case '-':
+			return new Token(Kind.TOKEN_SUB, this.lineNum, "-");
+		case '*':
+			return new Token(Kind.TOKEN_TIMES, this.lineNum, "*");
+		default:
+		{
+			if((char)curChar == '_')
+			{
+				System.out.println(this.fname + ": at line " + this.lineNum + ": Expect: a letter before '_'");
+				new Todo();
+				return null;
+			}
+			else if(Character.isLetter((char)curChar))
+			{
+				StringBuilder buffer = new StringBuilder();
+				buffer.append((char)curChar);
+				curChar = this.fstream.read();
+        	
+				while(Character.isLetter((char)curChar) || Character.isDigit((char)curChar) || (char)curChar == '_' && curChar != -1)
+				{
+					buffer.append((char)curChar);
+					curChar = this.fstream.read();
+				}					
+				
+				// back a char
+				if(curChar != -1)
+					this.fstream.unread(curChar);
+        	
+				if(map.getValue(buffer.toString()) != null)
+				{
+					return new Token((Kind)map.getValue(buffer.toString()), this.lineNum, buffer.toString());
+				}
+				else
+				{
+					/* get the next char to decide it's a Type or an id */
+					curChar = this.fstream.read();
+					while((char)curChar == ' ' || (char)curChar == '\t') 
+						curChar = this.fstream.read();
+
+					if(Character.isLetter((char)curChar))// if the next is a letter, it's a Type
+					{
+						if(curChar != -1)
+							this.fstream.unread(curChar);
+						return new Token(Kind.TOKEN_ID, this.lineNum, buffer.toString(), true);
+					}
+					else// if not, it's an id
+					{
+						if(curChar != -1)
+							this.fstream.unread(curChar);
+						return new Token(Kind.TOKEN_ID, this.lineNum, buffer.toString(), false);
+					}
+				}
+			}
+			else if(Character.isDigit((char)curChar))
+			{
+				StringBuilder buffer = new StringBuilder();
+				buffer.append((char)curChar);
+				curChar = this.fstream.read();
+        	
+				if(Character.isLetter((char)curChar))
+				{
+					new Todo();
+					return null;
+				}
+        	
+				while(Character.isDigit((char)curChar))
+				{
+					buffer.append((char)curChar);
+					curChar = this.fstream.read();
+				}
+        	
+				if(curChar != -1)
+					this.fstream.unread((char)curChar);
+        	
+				return new Token(Kind.TOKEN_NUM, this.lineNum, buffer.toString());
+			}
+			else
+			{
+				new Todo();
+				return null;
+			}
+		}
+		}
 	}
-	 return -1; 
-  }
-  
-  public void bfMark(){
-	  try {
-		this.fstream.mark(maxtoken);
-	} catch (Exception e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-  }
-  
-  public void bfReset(){
-	  try {
-		this.fstream.reset();
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-  }
-  // When called, return the next token (refer to the code "Token.java")
-  // from the input stream.
-  // Return TOKEN_EOF when reaching the end of the input stream.
-  private Token nextTokenInternal() throws Exception
-  {
-	//BufferedReader b =new BufferedReader();
-    int c = this.bfRead();
+
+	public Token nextToken()
+	{
+		Token token = null;
+
+		try 
+		{
+			token = this.nextTokenInternal();
+		} 
+		catch(Exception ex) 
+		{
+			ex.printStackTrace();
+			System.exit(1);
+		}
     
-    if (-1 == c)
-      // The value for "lineNum" is now "null",
-      // you should modify this to an appropriate
-      // line number for the "EOF" token.
-      return new Token(Kind.TOKEN_EOF, null);
-
-    // skip all kinds of "blanks"
-    while (' ' == c || '\t' == c || '\n' == c || '\r'==c||c=='/') {
-      if(c=='/')
-    	  while(c!='\n')
-    		  c =this.bfRead();  
-      if(c=='\n')
-    	  lineNum++;
-      
-      c = this.bfRead();
-    } 
-       
-    switch (c) {
-    case '+':
-    	return new Token(Kind.TOKEN_ADD, lineNum);
-    case '=':
-    	return new Token(Kind.TOKEN_ASSIGN,lineNum);
-    case ',':
-    	return new Token(Kind.TOKEN_COMMER,lineNum);
-    case '.':
-    	return new Token(Kind.TOKEN_DOT,lineNum);
-    case '{':
-    	return new Token(Kind.TOKEN_LBRACE,lineNum);
-    case '[':
-    	return new Token(Kind.TOKEN_LBRACK,lineNum);
-    case '(':
-    	return new Token(Kind.TOKEN_LPAREN,lineNum);
-    case '<':
-    	return new Token(Kind.TOKEN_LT,lineNum);
-    case '!':
-    	return new Token(Kind.TOKEN_NOT,lineNum);
-    case '}':
-    	return new Token(Kind.TOKEN_RBRACE,lineNum);
-    case ']':
-    	return new Token(Kind.TOKEN_RBRACK,lineNum);
-    case ')':
-    	return new Token(Kind.TOKEN_RPAREN,lineNum);
-    case ';':
-    	return new Token(Kind.TOKEN_SEMI,lineNum);
-    case '-':
-    	return new Token(Kind.TOKEN_SUB,lineNum);
-    case '*':
-    	return new Token(Kind.TOKEN_TIMES,lineNum);
-    case '&':
-    	this.bfMark();
-    	if(this.bfRead()=='&'){
-    		return new Token(Kind.TOKEN_AND,lineNum);
-    	}else this.bfReset();
-
-   	
-    default:
-      // Lab 1, exercise 2: supply missing code to
-      // lex other kinds of tokens.
-      // Hint: think carefully about the basic
-      // data structure and algorithms. The code
-      // is not that much and may be less than 50 lines. If you
-      // find you are writing a lot of code, you
-      // are on the wrong way.
-
-      Todo todo=new Todo();  
-      
-      if(todo.isNum(c)){
-    	  char cc[]=new char[20];
-    	  for(int i= 0;todo.isNum(c)|c=='.';i++){
-    		  cc[i]=(char)c;
-    		  this.bfMark();
-    		  c = this.bfRead();
-    	  }
-    	  this.bfReset();
-    	  this.buf = String.valueOf(cc).trim();
-    	  return new Token(Kind.TOKEN_NUM,lineNum,buf);
-      }
-      
-      
-      if(todo.isAlp(c)){
-    	  char cc[]=new char [20];
-    	  for(int i = 0;todo.isAlp(c)|todo.isNum(c)|c=='_';i++){
-    		  cc[i] = (char)c;
-    		  this.bfMark();
-    		  c = this.bfRead();
-    	  } 
-    	  this.bfReset();
-    	  this.buf = String.valueOf(cc).trim();
-	      if(buf .equals("boolean"))
-	    	  return new Token(Kind.TOKEN_BOOLEAN,lineNum);
-	      if(buf .equals("class"))
-	    	  return new Token(Kind.TOKEN_CLASS,lineNum);
-	      if(buf .equals("else"))
-	    	  return new Token(Kind.TOKEN_ELSE,lineNum);
-	      if(buf .equals("extends"))
-	    	  return new Token(Kind.TOKEN_EXTENDS,lineNum);
-	      if(buf .equals("false"))
-	    	  return new Token(Kind.TOKEN_FALSE,lineNum);
-	      if(buf .equals("if"))
-	    	  return new Token(Kind.TOKEN_IF,lineNum);
-	      if(buf .equals("int"))
-	    	  return new Token(Kind.TOKEN_INT,lineNum);
-	      if(buf .equals("length"))
-	    	  return new Token(Kind.TOKEN_LENGTH,lineNum);
-	      if(buf .equals("main"))
-	    	  return new Token(Kind.TOKEN_MAIN,lineNum);
-	      if(buf .equals("new"))
-	    	  return new Token(Kind.TOKEN_NEW,lineNum);
-	      if(buf .equals("out"))
-	    	  return new Token(Kind.TOKEN_OUT,lineNum);
-	      if(buf .equals("println"))
-	    	  return new Token(Kind.TOKEN_PRINTLN,lineNum);
-	      if(buf .equals("public"))
-	    	  return new Token(Kind.TOKEN_PUBLIC,lineNum);
-	      if(buf .equals("return"))
-	    	  return new Token(Kind.TOKEN_RETURN,lineNum);
-	      if(buf .equals("static"))
-	    	  return new Token(Kind.TOKEN_STATIC,lineNum);
-	      if(buf .equals("String"))
-	    	  return new Token(Kind.TOKEN_STRING,lineNum);
-	      if(buf .equals("System"))
-	    	  return new Token(Kind.TOKEN_SYSTEM,lineNum);
-	      if(buf .equals("this"))
-	    	  return new Token(Kind.TOKEN_THIS,lineNum);
-	      if(buf .equals("true"))
-	    	  return new Token(Kind.TOKEN_TRUE,lineNum);
-	      if(buf .equals("void"))
-	    	  return new Token(Kind.TOKEN_VOID,lineNum);
-	      if(buf .equals("while"))
-	    	  return new Token(Kind.TOKEN_WHILE,lineNum);    
-	      if(buf != null){
-	    	  this.bfMark();
-	    	  c =  this.bfRead();
-	    	  while(' ' == c || '\t' == c){
-	    		  c = this.bfRead();
-	    	  }
-	    	  this.bfReset();
-	    	  if (todo.isAlp(c)) {
-	    		  return new Token(Kind.TOKEN_ID,lineNum,buf,true);
-	    	  }else {
-	    		  return new Token(Kind.TOKEN_ID,lineNum,buf,false);
-	    	  }
-	      }
-      }else return new Token(Kind.TOKEN_EOF,lineNum,buf);
-      return null;
-    }
-  }
-
-  public Token nextToken()
-  {
-    Token t = null;
-  
-    try {
-      t = this.nextTokenInternal();
-    } catch (Exception e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-    if (control.Control.lex&&t.kind!=Kind.TOKEN_EOF)
-      System.out.println(t.toString());
-    return t;
-  }
+		if(control.Control.lex)
+			System.out.println(token.toString());
+    
+		return token;
+	}
 }

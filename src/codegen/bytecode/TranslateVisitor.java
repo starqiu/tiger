@@ -7,382 +7,498 @@ import util.Label;
 
 // Given a Java ast, translate it into Java bytecode.
 
-public class TranslateVisitor implements ast.Visitor
+public class TranslateVisitor implements ast.Visitor 
 {
-  private String classId;
-  private int index;
-  private Hashtable<String, Integer> indexTable;
-  private codegen.bytecode.type.T type; // type after translation
-  private codegen.bytecode.dec.T dec;
-  private LinkedList<codegen.bytecode.stm.T> stms;
-  private codegen.bytecode.method.T method;
-  private codegen.bytecode.classs.T classs;
-  private codegen.bytecode.mainClass.T mainClass;
-  public codegen.bytecode.program.T program;
+	private String classId;
+	private int index;
+	private Hashtable<String, Integer> indexTable;
+	private codegen.bytecode.type.T type;// type after translation
+	private codegen.bytecode.dec.T dec;
+	private LinkedList<codegen.bytecode.stm.T> stms;
+	private codegen.bytecode.method.T method;
+	private codegen.bytecode.classs.T classs;
+	private codegen.bytecode.mainClass.T mainClass;
+	public codegen.bytecode.program.T program;
 
-  public TranslateVisitor()
-  {
-    this.classId = null;
-    this.indexTable = null;
-    this.type = null;
-    this.dec = null;
-    this.stms = new java.util.LinkedList<codegen.bytecode.stm.T>();
-    this.method = null;
-    this.classs = null;
-    this.mainClass = null;
-    this.program = null;
-  }
+	public TranslateVisitor() 
+	{
+		this.classId = null;
+		this.indexTable = null;
+		this.type = null;
+		this.dec = null;
+		this.stms = new LinkedList<codegen.bytecode.stm.T>();
+		this.method = null;
+		this.classs = null;
+		this.mainClass = null;
+		this.program = null;
+	}
 
-  private void emit(codegen.bytecode.stm.T s)
-  {
-    this.stms.add(s);
-  }
+	private void emit(codegen.bytecode.stm.T s)
+	{
+		this.stms.add(s);
+	}
 
-  // /////////////////////////////////////////////////////
-  // expressions
-  @Override
-  public void visit(ast.exp.Add e)
-  {
-	  e.left.accept(this);
-	  e.right.accept(this);
-	  emit(new codegen.bytecode.stm.Iadd());
-  }
+	// /////////////////////////////////////////////////////
+	// expressions
+	// left + right
+	@Override
+	public void visit(ast.exp.Add e) 
+	{
+		e.left.accept(this);
+		e.right.accept(this);
+		this.emit(new codegen.bytecode.stm.Iadd());
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.And e)
-  {
-	  e.left.accept(this);
-	  e.right.accept(this);
-	  emit(new codegen.bytecode.stm.Iand());
-  }
+	// left && right
+	@Override
+	public void visit(ast.exp.And e) 
+	{
+		e.left.accept(this);
+		e.right.accept(this);
+		this.emit(new codegen.bytecode.stm.Iand());
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.ArraySelect e)
-  {
-	  e.array.accept(this);
-	  e.index.accept(this);
-	  emit(new codegen.bytecode.stm.IAload());
-  }
+	// array[index]
+	@Override
+	public void visit(ast.exp.ArraySelect e) 
+	{
+		e.array.accept(this);
+		e.index.accept(this);
+		this.emit(new codegen.bytecode.stm.IAload());
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Call e)
-  {
-    e.exp.accept(this);
-    for (ast.exp.T x : e.args) {
-      x.accept(this);
-    }
-    e.rt.accept(this);
-    codegen.bytecode.type.T rt = this.type;
-    java.util.LinkedList<codegen.bytecode.type.T> at = new java.util.LinkedList<codegen.bytecode.type.T>();
-    for (ast.type.T t : e.at) {
-      t.accept(this);
-      at.add(this.type);
-    }
-    emit(new codegen.bytecode.stm.Invokevirtual(e.id, e.type, at, rt));
-    return;
-  }
+	// exp.id(expList)
+	@Override
+	public void visit(ast.exp.Call e) 
+	{
+		e.exp.accept(this);
+		for(ast.exp.T x : e.args) 
+		{
+			x.accept(this);
+		}
+		e.rt.accept(this);
+		codegen.bytecode.type.T rt = this.type;
+		
+		LinkedList<codegen.bytecode.type.T> at = new LinkedList<codegen.bytecode.type.T>();
+		
+		for(ast.type.T t : e.at) 
+		{
+			t.accept(this);
+			at.add(this.type);
+		}
+		this.emit(new codegen.bytecode.stm.Invokevirtual(e.id, e.type, at, rt));
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.False e)
-  {
-	  emit(new codegen.bytecode.stm.Ldc(0));
-  }
+	// false
+	@Override
+	public void visit(ast.exp.False e) 
+	{
+		this.emit(new codegen.bytecode.stm.Ldc(0));
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Id e)
-  {
-    int index = this.indexTable.get(e.id);
-    ast.type.T type = e.type;
-    if (type.getNum() > 0)// a reference
-      emit(new codegen.bytecode.stm.Aload(index));
-    else
-      emit(new codegen.bytecode.stm.Iload(index));
-    // but what about this is a field?
-    return;
-  }
+	// id
+	@Override
+	public void visit(ast.exp.Id e) 
+	{
+		if(e.isField)
+		{
+			this.emit(new codegen.bytecode.stm.Aload(0));
+			e.type.accept(this);
+			this.emit(new codegen.bytecode.stm.Getfield(e.className, e.id, this.type));
+		}
+		else
+		{
+			int index = this.indexTable.get(e.id);
+			ast.type.T type = e.type;
+			if(type.getNum() > 0)// a reference
+				this.emit(new codegen.bytecode.stm.Aload(index));
+			else
+				this.emit(new codegen.bytecode.stm.Iload(index));
+		}
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Length e)
-  {
-	  e.array.accept(this);
-	  emit(new codegen.bytecode.stm.ArrayLength());
-  }
+	// array.length
+	@Override
+	public void visit(ast.exp.Length e) 
+	{
+		e.array.accept(this);
+		this.emit(new codegen.bytecode.stm.ArrayLength());
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Lt e)
-  {
-    Label tl = new Label(), fl = new Label(), el = new Label();
-    e.left.accept(this);
-    e.right.accept(this);
-    emit(new codegen.bytecode.stm.Ificmplt(tl));
-    emit(new codegen.bytecode.stm.Label(fl));
-    emit(new codegen.bytecode.stm.Ldc(0));
-    emit(new codegen.bytecode.stm.Goto(el));
-    emit(new codegen.bytecode.stm.Label(tl));
-    emit(new codegen.bytecode.stm.Ldc(1));
-    emit(new codegen.bytecode.stm.Goto(el));
-    emit(new codegen.bytecode.stm.Label(el));
-    return;
-  }
+	// left < right
+	@Override
+	public void visit(ast.exp.Lt e) 
+	{
+		Label tl = new Label(), fl = new Label(), el = new Label();
+		e.left.accept(this);
+		e.right.accept(this);
+		this.emit(new codegen.bytecode.stm.Ificmplt(tl));
+		
+		this.emit(new codegen.bytecode.stm.Label(fl));
+		this.emit(new codegen.bytecode.stm.Ldc(0));
+		this.emit(new codegen.bytecode.stm.Goto(el));
+		
+		this.emit(new codegen.bytecode.stm.Label(tl));
+		this.emit(new codegen.bytecode.stm.Ldc(1));
+		this.emit(new codegen.bytecode.stm.Goto(el));
+		
+		this.emit(new codegen.bytecode.stm.Label(el));
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.NewIntArray e)
-  {
-	  e.exp.accept(this);
-	  emit(new codegen.bytecode.stm.NewArray(e.type));
-  }
+	// new int[exp]
+	@Override
+	public void visit(ast.exp.NewIntArray e) 
+	{
+		e.exp.accept(this);
+		this.emit(new codegen.bytecode.stm.NewArray());
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.NewObject e)
-  {
-    emit(new codegen.bytecode.stm.New(e.id));
-    return;
-  }
+	// new id()
+	@Override
+	public void visit(ast.exp.NewObject e)
+	{
+		this.emit(new codegen.bytecode.stm.New(e.id));
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Not e)
-  {
-	  Label tl = new Label();
-	  e.exp.accept(this);
-	  emit(new codegen.bytecode.stm.Ifne(tl));
-	  emit(new codegen.bytecode.stm.Ldc(1));
-	  emit(new codegen.bytecode.stm.Label(tl));
-	  emit(new codegen.bytecode.stm.Ldc(0));
-  }
+	// !exp
+	@Override
+	public void visit(ast.exp.Not e)
+	{
+		Label tl = new Label(), el = new Label();
+		e.exp.accept(this);
+		this.emit(new codegen.bytecode.stm.Ifne(tl));
+		
+		this.emit(new codegen.bytecode.stm.Ldc(1));
+		this.emit(new codegen.bytecode.stm.Goto(el));
+		
+		this.emit(new codegen.bytecode.stm.Label(tl));
+		this.emit(new codegen.bytecode.stm.Ldc(0));
+		
+		this.emit(new codegen.bytecode.stm.Label(el));
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Num e)
-  {
-    emit(new codegen.bytecode.stm.Ldc(e.num));
-    return;
-  }
+	@Override
+	public void visit(ast.exp.Num e) 
+	{
+		this.emit(new codegen.bytecode.stm.Ldc(e.num));
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Sub e)
-  {
-    e.left.accept(this);
-    e.right.accept(this);
-    emit(new codegen.bytecode.stm.Isub());
-    return;
-  }
+	// (exp)
+	@Override
+	public void visit(ast.exp.Paren e) 
+	{
+		e.exp.accept(this);
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.This e)
-  {
-    emit(new codegen.bytecode.stm.Aload(0));
-    return;
-  }
+	// left - right
+	@Override
+	public void visit(ast.exp.Sub e) 
+	{
+		e.left.accept(this);
+		e.right.accept(this);
+		this.emit(new codegen.bytecode.stm.Isub());
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.Times e)
-  {
-    e.left.accept(this);
-    e.right.accept(this);
-    emit(new codegen.bytecode.stm.Imul());
-    return;
-  }
+	// this
+	@Override
+	public void visit(ast.exp.This e) 
+	{
+		this.emit(new codegen.bytecode.stm.Aload(0));
+		return;
+	}
 
-  @Override
-  public void visit(ast.exp.True e)
-  {
-	  emit(new codegen.bytecode.stm.Ldc(1));
-  }
+	// left * right
+	@Override
+	public void visit(ast.exp.Times e)
+	{
+		e.left.accept(this);
+		e.right.accept(this);
+		this.emit(new codegen.bytecode.stm.Imul());
+		return;
+	}
 
-  // statements
-  @Override
-  public void visit(ast.stm.Assign s)
-  {
-    s.exp.accept(this);
-    int index = this.indexTable.get(s.id);
-    ast.type.T type = s.type;
-    if (type.getNum() > 0)
-      emit(new codegen.bytecode.stm.Astore(index));
-    else
-      emit(new codegen.bytecode.stm.Istore(index));
+	// true
+	@Override
+	public void visit(ast.exp.True e) 
+	{
+		this.emit(new codegen.bytecode.stm.Ldc(1));
+		return;
+	}
 
-    return;
-  }
+	// statements
+	// id = Exp;
+	@Override
+	public void visit(ast.stm.Assign s) 
+	{
+		if(s.id.isField)
+		{
+			this.emit(new codegen.bytecode.stm.Aload(0));
+		}
+		s.exp.accept(this);
+		if(s.id.isField)
+		{
+			s.id.type.accept(this);
+			this.emit(new codegen.bytecode.stm.Putfield(s.id.className, s.id.id, this.type));
+		}
+		else
+		{
+			int index = this.indexTable.get(s.id.id);
+			ast.type.T type = s.type;
+			if(type.getNum() > 0)
+				this.emit(new codegen.bytecode.stm.Astore(index));
+			else
+				this.emit(new codegen.bytecode.stm.Istore(index));
+		}
+		return;
+	}
 
-  @Override
-  public void visit(ast.stm.AssignArray s)
-  {
-	  int index = this.indexTable.get(s.id);
-	  emit(new codegen.bytecode.stm.Aload(index));
-	  s.index.accept(this);
-	  s.exp.accept(this);
-	  emit(new codegen.bytecode.stm.IAstore());
-  }
+	// id[index] = Exp;
+	@Override
+	public void visit(ast.stm.AssignArray s) 
+	{
+		s.id.accept(this);
+		s.index.accept(this);
+		s.exp.accept(this);
+		this.emit(new codegen.bytecode.stm.IAstore());
+		return;
+	}
 
-  @Override
-  public void visit(ast.stm.Block s)
-  {
-	  Label nextL = new Label();
-	  for (ast.stm.T t : s.stms) {
-		Label curL = nextL;
-		nextL = new Label();
-		emit(new codegen.bytecode.stm.Label(curL));
-		t.accept(this);
-		emit(new codegen.bytecode.stm.Goto(nextL));
-	  }
-  }
+	// { Statement* }
+	@Override
+	public void visit(ast.stm.Block s) 
+	{
+		for(ast.stm.T b : s.stms)
+			b.accept(this);
+		return;
+	}
 
-  @Override
-  public void visit(ast.stm.If s)
-  {
-    Label tl = new Label(), fl = new Label(), el = new Label();
-    s.condition.accept(this);
-    emit(new codegen.bytecode.stm.Ifne(tl));
-    emit(new codegen.bytecode.stm.Label(fl));
-    s.elsee.accept(this);
-    emit(new codegen.bytecode.stm.Goto(el));
-    emit(new codegen.bytecode.stm.Label(tl));
-    s.thenn.accept(this);
-    emit(new codegen.bytecode.stm.Goto(el));
-    emit(new codegen.bytecode.stm.Label(el));
-    return;
-  }
+	// if(condition) 
+	//		thenn 
+	// else 
+	//		elsee
+	@Override
+	public void visit(ast.stm.If s) 
+	{
+		Label tl = new Label(), fl = new Label(), el = new Label();
+		s.condition.accept(this);
+		this.emit(new codegen.bytecode.stm.Ifne(tl));
+		
+		this.emit(new codegen.bytecode.stm.Label(fl));
+		s.elsee.accept(this);
+		this.emit(new codegen.bytecode.stm.Goto(el));
+		
+		this.emit(new codegen.bytecode.stm.Label(tl));
+		s.thenn.accept(this);
+		this.emit(new codegen.bytecode.stm.Goto(el));
+		
+		this.emit(new codegen.bytecode.stm.Label(el));
+		return;
+	}
 
-  @Override
-  public void visit(ast.stm.Print s)
-  {
-    s.exp.accept(this);
-    emit(new codegen.bytecode.stm.Print());
-    return;
-  }
+	// System.out.println(Exp);
+	@Override
+	public void visit(ast.stm.Print s) 
+	{
+		s.exp.accept(this);
+		this.emit(new codegen.bytecode.stm.Print());
+		return;
+	}
 
-  @Override
-  public void visit(ast.stm.While s)
-  {
-	  Label tl = new Label(), fl = new Label(), el = new Label();
-	  emit(new codegen.bytecode.stm.Label(tl));
-	  s.condition.accept(this);
-	  emit(new codegen.bytecode.stm.Ifne(el));
-	  emit(new codegen.bytecode.stm.Label(fl));
-	  s.body.accept(this);
-	  emit(new codegen.bytecode.stm.Goto(tl));
-	  emit(new codegen.bytecode.stm.Label(el));
-  }
+	// while(condition) 
+	// 		body
+	@Override
+	public void visit(ast.stm.While s) 
+	{
+		Label tl = new Label(), fl = new Label(), el = new Label();
+		
+		this.emit(new codegen.bytecode.stm.Label(tl));
+		s.condition.accept(this);
+		this.emit(new codegen.bytecode.stm.Ifne(fl));
+		this.emit(new codegen.bytecode.stm.Goto(el));
+		
+		this.emit(new codegen.bytecode.stm.Label(fl));
+		s.body.accept(this);
+		this.emit(new codegen.bytecode.stm.Goto(tl));
+		
+		this.emit(new codegen.bytecode.stm.Label(el));
+		return;
+	}
 
-  // type
-  @Override
-  public void visit(ast.type.Boolean t)
-  {
-	  this.type = new codegen.bytecode.type.Int();
-  }
+	// type
+	// boolean
+	@Override
+	public void visit(ast.type.Boolean t) 
+	{
+		this.type = new codegen.bytecode.type.Int();
+		return;
+	}
 
-  @Override
-  public void visit(ast.type.Class t)
-  {
-	  this.type = new codegen.bytecode.type.Class(t.id);
-  }
+	@Override
+	public void visit(ast.type.Class t) 
+	{
+		this.type = new codegen.bytecode.type.Class(t.id);
+		return;
+	}
 
-  @Override
-  public void visit(ast.type.Int t)
-  {
-    this.type = new codegen.bytecode.type.Int();
-  }
+	// int
+	@Override
+	public void visit(ast.type.Int t) 
+	{
+		this.type = new codegen.bytecode.type.Int();
+		return;
+	}
 
-  @Override
-  public void visit(ast.type.IntArray t)
-  {
-	  this.type = new codegen.bytecode.type.IntArray();
-  }
+	// int[]
+	@Override
+	public void visit(ast.type.IntArray t) 
+	{
+		this.type = new codegen.bytecode.type.IntArray();
+		return;
+	}
 
-  // dec
-  @Override
-  public void visit(ast.dec.Dec d)
-  {
-    d.type.accept(this);
-    this.dec = new codegen.bytecode.dec.Dec(this.type, d.id);
-    this.indexTable.put(d.id, index++);
-    return;
-  }
+	// Dec -> Type id
+	@Override
+	public void visit(ast.dec.Dec d)
+	{
+		d.type.accept(this);
+		this.dec = new codegen.bytecode.dec.Dec(this.type, d.id);
+		if(d.isField)
+			return;
+		this.indexTable.put(d.id, index++);
+		return;
+	}
 
-  // method
-  @Override
-  public void visit(ast.method.Method m)
-  {
-    // record, in a hash table, each var's index
-    // this index will be used in the load store operation
-    this.index = 1;
-    this.indexTable = new java.util.Hashtable<String, Integer>();
+	// Method -> public Type id(FormalList)
+	//           { 
+	//				VarDecl* 
+	//				Statement* 
+	//				return Exp ;
+	//			 }
+	@Override
+	public void visit(ast.method.Method m) 
+	{
+		// record, in a hash table, each var's index
+		// this index will be used in the load store operation
+		this.index = 1;
+		this.indexTable = new Hashtable<String, Integer>();
 
-    m.retType.accept(this);
-    codegen.bytecode.type.T newRetType = this.type;
-    java.util.LinkedList<codegen.bytecode.dec.T> newFormals = new java.util.LinkedList<codegen.bytecode.dec.T>();
-    for (ast.dec.T d : m.formals) {
-      d.accept(this);
-      newFormals.add(this.dec);
-    }
-    java.util.LinkedList<codegen.bytecode.dec.T> locals = new java.util.LinkedList<codegen.bytecode.dec.T>();
-    for (ast.dec.T d : m.locals) {
-      d.accept(this);
-      locals.add(this.dec);
-    }
-    this.stms = new java.util.LinkedList<codegen.bytecode.stm.T>();
-    for (ast.stm.T s : m.stms) {
-      s.accept(this);
-    }
+		m.retType.accept(this);
+		codegen.bytecode.type.T newRetType = this.type;
+		
+		LinkedList<codegen.bytecode.dec.T> newFormals = new LinkedList<codegen.bytecode.dec.T>();
+		for(ast.dec.T d : m.formals) 
+		{
+			d.accept(this);
+			newFormals.add(this.dec);
+		}
+		
+		LinkedList<codegen.bytecode.dec.T> locals = new LinkedList<codegen.bytecode.dec.T>();
+		for(ast.dec.T d : m.locals) 
+		{
+			d.accept(this);
+			locals.add(this.dec);
+		}
+		
+		this.stms = new java.util.LinkedList<codegen.bytecode.stm.T>();
+		for(ast.stm.T s : m.stms) 
+		{
+			s.accept(this);
+		}
 
-    // return statement is specially treated
-    m.retExp.accept(this);
+		// return statement is specially treated
+		m.retExp.accept(this);
 
-    if (m.retType.getNum() > 0)
-      emit(new codegen.bytecode.stm.Areturn());
-    else
-      emit(new codegen.bytecode.stm.Ireturn());
+		if(m.retType.getNum() > 0)
+			emit(new codegen.bytecode.stm.Areturn());
+		else
+			emit(new codegen.bytecode.stm.Ireturn());
 
-    this.method = new codegen.bytecode.method.Method(newRetType, m.id,
-        this.classId, newFormals, locals, this.stms, 0, this.index);
+		this.method = new codegen.bytecode.method.Method(newRetType, m.id, 
+				this.classId, newFormals, locals, this.stms, 0, this.index);
 
-    return;
-  }
+		return;
+	}
 
-  // class
-  @Override
-  public void visit(ast.classs.Class c)
-  {
-    this.classId = c.id;
-    java.util.LinkedList<codegen.bytecode.dec.T> newDecs = new java.util.LinkedList<codegen.bytecode.dec.T>();
-    for (ast.dec.T dec : c.decs) {
-      dec.accept(this);
-      newDecs.add(this.dec);
-    }
-    java.util.LinkedList<codegen.bytecode.method.T> newMethods = new java.util.LinkedList<codegen.bytecode.method.T>();
-    for (ast.method.T m : c.methods) {
-      m.accept(this);
-      newMethods.add(this.method);
-    }
-    this.classs = new codegen.bytecode.classs.Class(c.id, c.extendss, newDecs,
-        newMethods);
-    return;
-  }
+	// Class -> class id 
+	//			{ 
+	//				VarDecl* 
+	//				MethodDecl* 
+	//			}
+	// 		 -> class id extends id 
+	//			{ 
+	//				VarDecl* 
+	//				MethodDecl* 
+	//			}
+	@Override
+	public void visit(ast.classs.Class c) 
+	{
+		this.classId = c.id;
+		
+		LinkedList<codegen.bytecode.dec.T> newDecs = new LinkedList<codegen.bytecode.dec.T>();
+		for(ast.dec.T dec : c.decs) 
+		{
+			dec.accept(this);
+			newDecs.add(this.dec);
+		}
+		
+		LinkedList<codegen.bytecode.method.T> newMethods = new LinkedList<codegen.bytecode.method.T>();
+		for(ast.method.T m : c.methods) 
+		{
+			m.accept(this);
+			newMethods.add(this.method);
+		}
+		
+		this.classs = new codegen.bytecode.classs.Class(c.id, c.extendss, newDecs, newMethods);
+		return;
+	}
 
-  // main class
-  @Override
-  public void visit(ast.mainClass.MainClass c)
-  {
-    c.stm.accept(this);
-    this.mainClass = new codegen.bytecode.mainClass.MainClass(c.id, c.arg,
-        this.stms);
-    this.stms = new java.util.LinkedList<codegen.bytecode.stm.T>();
-    return;
-  }
+	// MainClass -> class id
+    //              {
+	//                	public static void main(String[] id )
+	//                	{
+	//                		Statement
+	//                	}
+	//               }
+	@Override
+	public void visit(ast.mainClass.MainClass c) 
+	{
+		c.stm.accept(this);
+		
+		this.mainClass = new codegen.bytecode.mainClass.MainClass(c.id, c.arg, this.stms);
+		
+		this.stms = new LinkedList<codegen.bytecode.stm.T>();
+		return;
+	}
+	
+	// Program -> MainClass ClassDecl*
+	@Override
+	public void visit(ast.program.Program p) 
+	{
+		// do translations
+		p.mainClass.accept(this);
 
-  // program
-  @Override
-  public void visit(ast.program.Program p)
-  {
-    // do translations
-    p.mainClass.accept(this);
-
-    java.util.LinkedList<codegen.bytecode.classs.T> newClasses = new java.util.LinkedList<codegen.bytecode.classs.T>();
-    for (ast.classs.T classs : p.classes) {
-      classs.accept(this);
-      newClasses.add(this.classs);
-    }
-    this.program = new codegen.bytecode.program.Program(this.mainClass,
-        newClasses);
-    return;
-  }
+		LinkedList<codegen.bytecode.classs.T> newClasses = new LinkedList<codegen.bytecode.classs.T>();
+		for(ast.classs.T classs : p.classes) 
+		{
+			classs.accept(this);
+			newClasses.add(this.classs);
+		}
+		
+		this.program = new codegen.bytecode.program.Program(this.mainClass, newClasses);
+		return;
+	}
 }

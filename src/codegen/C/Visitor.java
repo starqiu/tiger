@@ -24,6 +24,8 @@ public interface Visitor
   public void visit(codegen.C.exp.Not e);
 
   public void visit(codegen.C.exp.Num e);
+  
+  public void visit(codegen.C.exp.Paren e);
 
   public void visit(codegen.C.exp.Sub e);
 
@@ -64,7 +66,7 @@ public interface Visitor
   public void visit(codegen.C.vtable.Vtable v);
 
   // class
-  public void visit(codegen.C.classs.Class c);
+  public void visit(codegen.C.classes.Class c);
 
   // program
   public void visit(codegen.C.program.Program p);
