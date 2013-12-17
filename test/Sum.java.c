@@ -5,11 +5,17 @@
 struct Sum
 {
     struct Sum_vtable *vptr;
+    int isObjOrArray;
+    unsigned length;
+    void *forwarding;
 };
 
 struct Doit
 {
     struct Doit_vtable *vptr;
+    int isObjOrArray;
+    unsigned length;
+    void *forwarding;
 };
 
 // vtables structures
@@ -19,11 +25,12 @@ struct Sum_vtable
 
 struct Doit_vtable
 {
+    char *Doit_gc_map;
     int(*doit)(struct Doit*, int);
 };
 
 // method declarations
-int Doit_doit(struct Doit * this, int n);
+int Doit_doit(struct Doit * thiss, int n);
 
 // vtables
 struct Sum_vtable Sum_vtable_ = 
@@ -32,25 +39,68 @@ struct Sum_vtable Sum_vtable_ =
 
 struct Doit_vtable Doit_vtable_ = 
 {
+    "",
     Doit_doit,
 };
 
-// methods
-int Doit_doit(struct Doit * this, int n)
+// GC stack frames
+struct Tiger_main_gc_frame
 {
+    void *prev;
+    char *arguments_gc_map;
+    int *arguments_base_address;
+    int locals_gc_map;
+    struct Doit * x_0;
+};
+
+struct Doit_doit_gc_frame
+{
+    void *prev;
+    char *arguments_gc_map;
+    int *arguments_base_address;
+    int locals_gc_map;
+};
+
+// memory GC maps
+int Tiger_main_locals_gc_map = 1;
+
+char *Doit_doit_arguments_gc_map = "10";
+int Doit_doit_locals_gc_map = 0;
+
+extern void *previous;
+
+// methods
+int Doit_doit(struct Doit * thiss, int n)
+{
+    struct Doit_doit_gc_frame frame;
+    frame.prev = previous;
+    previous = &frame;
+    frame.arguments_gc_map = Doit_doit_arguments_gc_map;
+    frame.arguments_base_address = (int *)&thiss;
+    frame.locals_gc_map = Doit_doit_locals_gc_map;
     int sum;
     int i;
+
     i = 0;
     sum = 0;
     while(i < n)
+    {
         sum = sum + i;
+        i = i + 1;
+    }
+    previous = frame.prev;
     return sum;
 }
 
 // main method
 int Tiger_main()
 {
-    struct Doit * x_0;
-    System_out_println((x_0=((struct Doit*)(Tiger_new(&Doit_vtable_, sizeof(struct Doit)))), x_0->vptr->doit(x_0, 101)));
+    struct Tiger_main_gc_frame frame;
+    frame.prev = previous;
+    previous = &frame;
+    frame.arguments_gc_map = 0;
+    frame.arguments_base_address = 0;
+    frame.locals_gc_map = Tiger_main_locals_gc_map;
+    System_out_println((frame.x_0=((struct Doit*)(Tiger_new(&Doit_vtable_, sizeof(struct Doit)))), frame.x_0->vptr->doit(frame.x_0, 101)));
 }
 
