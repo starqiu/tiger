@@ -132,7 +132,7 @@ public class PrettyPrintVisitor implements Visitor
 			else
                         this.say(e.id);
                 else
-                        this.say("this->" + e.id);
+                        this.say("thiss->" + e.id);
                 return;
         }
 
@@ -217,7 +217,7 @@ public class PrettyPrintVisitor implements Visitor
         @Override
         public void visit(codegen.C.exp.This e)
         {
-                this.say("this");
+                this.say("thiss");
         }
 
         // left * right

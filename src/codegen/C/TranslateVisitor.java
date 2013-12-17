@@ -363,7 +363,7 @@ public class TranslateVisitor implements ast.Visitor
                 codegen.C.type.T newRetType = this.type;
                 
                 LinkedList<codegen.C.dec.T> newFormals = new LinkedList<codegen.C.dec.T>();
-                newFormals.add(new codegen.C.dec.Dec(new codegen.C.type.Class(this.classId), "this"));
+                newFormals.add(new codegen.C.dec.Dec(new codegen.C.type.Class(this.classId), "thiss"));
                 for(ast.dec.T d : m.formals) 
                 {
                         d.accept(this);

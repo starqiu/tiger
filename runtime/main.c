@@ -17,7 +17,9 @@ int main (int argc, char **argv)
   // You can use the offered function in file "control.c"
   // and "command-line.c"  
   // Your code here:
-  
+	printf("You should input like \"a.out @tiger -heapSize 1 @\" to set the Java heap size\n");
+	printf("You should input like \"a.out @tiger -gcLog @\" to generate the log\n");
+	CommandLine_doarg(argc, argv);
   // initialize the Java heap
   Tiger_heap_init (Control_heapSize);
 
