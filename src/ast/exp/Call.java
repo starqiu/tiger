@@ -8,6 +8,11 @@ public class Call extends T
 	public String id;
 	public LinkedList<T> args;
 	public String type;// type of first field "exp"
+  // the following two fields records the argument types
+  // and return type for the method being called, all these
+  // types are declared types, but not actural types of the
+  // arguments.
+  // Both these two fields are filled in by the elaborator.
 	public LinkedList<ast.type.T> at;// arg's type
 	public ast.type.T rt;
 
@@ -17,6 +22,8 @@ public class Call extends T
 		this.id = id;
 		this.args = args;
 		this.type = null;
+		this.at = null;
+    	this.rt = null;
 	}
 	
 	public Call(T exp, String id, LinkedList<T> args, int lineNum) 
@@ -24,7 +31,6 @@ public class Call extends T
 		this(exp, id, args);
 		this.lineNum = lineNum;
 	}
-
 	@Override
 	public void accept(ast.Visitor v) 
 	{

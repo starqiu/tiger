@@ -4,6 +4,7 @@ import codegen.C.Visitor;
 
 public class While extends T 
 {
+
 	public codegen.C.exp.T condition;
 	public T body;
 
