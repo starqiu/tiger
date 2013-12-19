@@ -45,6 +45,10 @@ public interface Visitor
   public void visit(codegen.C.stm.Print s);
 
   public void visit(codegen.C.stm.While s);
+  
+  public void visit(codegen.C.stm.Throw s);
+  
+  public void visit(codegen.C.stm.TryCatch s);
 
   // type
   public void visit(codegen.C.type.Class t);

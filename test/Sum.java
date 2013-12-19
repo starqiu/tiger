@@ -11,10 +11,40 @@ class Doit {
         
         i = 0;
         sum = 0;
-        while (i<n){
-        	sum = sum + i;
-        	i = i+1;
-        }
+        try {
+        	while (i<n){
+            	sum = sum + i;
+            	i = i+1;
+            	
+            	System.out.println(1);
+            	try {
+            		System.out.println(6);
+					throw;
+				} catch  {
+					System.out.println(7);
+				}
+            	sum = this.f();
+            }
+		} catch {
+			System.out.println(2);
+		}
+		try {
+    		System.out.println(8);
+			throw;
+		} catch  {
+			System.out.println(9);
+		}
         return sum;
+    }
+    public int f(){
+    	int i;
+    	System.out.println(5);
+    	i=this.testjmp();
+    	return 1;
+    }
+    public int testjmp(){
+    	System.out.println(3);
+    	throw;
+    	return 1;
     }
 }

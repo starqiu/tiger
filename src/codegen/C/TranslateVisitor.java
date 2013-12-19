@@ -306,6 +306,28 @@ public class TranslateVisitor implements ast.Visitor {
 		return;
 	}
 
+	/*
+	 * try stm catch stm
+	 */
+	public void visit(ast.stm.TryCatch s) {
+		s.tryy.accept(this);
+		codegen.C.stm.T tryy = this.stm;
+
+		s.catchh.accept(this);
+		codegen.C.stm.T catchh = this.stm;
+
+		this.stm = new codegen.C.stm.TryCatch(s.bufId, tryy, catchh);
+		return;
+	}
+
+	/*
+	 * throw
+	 */
+	public void visit(ast.stm.Throw s) {
+		this.stm = new codegen.C.stm.Throw(s.bufId);
+		return;
+	}
+
 	// type
 	// boolean
 	@Override

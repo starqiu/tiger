@@ -13,7 +13,7 @@ public class Control
   public static boolean lex = false;
 
   // ast
-  public static boolean dumpAst = false;
+  public static boolean dumpAst = true;
   public static boolean dumpC = false;
   public static boolean dumpCyclone = false;
   public static boolean dumpDot = false;

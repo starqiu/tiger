@@ -243,6 +243,20 @@ public class TranslateVisitor implements ast.Visitor {
 	public void visit(ast.stm.While s) {
 	}
 
+	/*
+	 * try stm catch stm
+	 */
+	public void visit(ast.stm.TryCatch s) {
+
+	}
+
+	/*
+	 * throw
+	 */
+	public void visit(ast.stm.Throw s) {
+
+	}
+
 	// type
 	@Override
 	public void visit(ast.type.Boolean t) {

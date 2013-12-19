@@ -175,7 +175,8 @@ public class PrettyPrintVisitor implements Visitor {
 	@Override
 	public void visit(ast.stm.Assign s) {
 		this.printSpaces();
-		this.say(s.id + " = ");
+		s.id.accept(this);
+		this.say(" = ");
 		s.exp.accept(this);
 		this.sayln(";");
 		return;
@@ -185,7 +186,8 @@ public class PrettyPrintVisitor implements Visitor {
 	@Override
 	public void visit(ast.stm.AssignArray s) {
 		this.printSpaces();
-		this.say(s.id.id + "[");
+		s.id.accept(this);
+		this.say("[");
 		s.index.accept(this);
 		this.say("] = ");
 		s.exp.accept(this);
@@ -272,6 +274,46 @@ public class PrettyPrintVisitor implements Visitor {
 			s.body.accept(this);
 		}
 		return;
+	}
+
+	/*
+	 * try stm catch stm
+	 */
+	public void visit(ast.stm.TryCatch s) {
+		this.printSpaces();
+		this.sayln("try");
+		if (!s.tryy.getClass().toString().equals("class ast.stm.Block")) {
+			this.indent();
+			s.tryy.accept(this);
+			this.unIndent();
+			this.printSpaces();
+			this.sayln("catch");
+			if (!s.catchh.getClass().toString().equals("class ast.stm.Block")) {
+				this.indent();
+				s.catchh.accept(this);
+				this.unIndent();
+			} else {
+				s.catchh.accept(this);
+			}
+		} else {
+			s.tryy.accept(this);
+			this.printSpaces();
+			this.sayln("catch");
+			if (!s.catchh.getClass().toString().equals("class ast.stm.Block")) {
+				this.indent();
+				s.catchh.accept(this);
+				this.unIndent();
+			} else {
+				s.catchh.accept(this);
+			}
+		}
+	}
+	/*
+	 * throw
+	 */
+	public void visit(ast.stm.Throw s) {
+		this.printSpaces();
+		this.sayln("throw;");
 	}
 
 	// type

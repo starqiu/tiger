@@ -1,8 +1,9 @@
 package cfg;
 
-import codegen.C.exp.Paren;
-import java.util.LinkedList;
 import java.util.ArrayList;
+import java.util.LinkedList;
+
+import codegen.C.exp.Paren;
 
 // Traverse the C AST, and generate
 // a control-flow graph.
@@ -229,6 +230,15 @@ public class TranslateVisitor implements codegen.C.Visitor {
 
 	@Override
 	public void visit(codegen.C.stm.While s) {
+	}
+	
+	//throw
+	public void visit(codegen.C.stm.Throw s) {
+		return;
+	}
+	//try Statement catch Statement
+	public void visit(codegen.C.stm.TryCatch s) {
+		return;
 	}
 
 	// type

@@ -2,6 +2,9 @@ package parser;
 
 import java.io.PushbackReader;
 import java.util.LinkedList;
+import java.util.Stack;
+
+import util.JmpBuf;
 
 import ast.exp.T;
 import lexer.Lexer;
@@ -13,6 +16,7 @@ public class Parser {
 	Lexer lexer;
 	Token current;
 	boolean isField;
+	Stack<String> bufStack ;
 
 	public Parser(String fname, PushbackReader fstream) {
 		this.fname = fname;
@@ -21,6 +25,7 @@ public class Parser {
 		while (this.current.kind == Kind.TOKEN_NOTE)
 			this.current = this.lexer.nextToken();
 		this.isField = false;
+		this.bufStack = new  Stack<String>();
 	}
 
 	// /////////////////////////////////////////////
@@ -257,6 +262,8 @@ public class Parser {
 		while (this.current.kind == Kind.TOKEN_LBRACE
 				|| this.current.kind == Kind.TOKEN_IF
 				|| this.current.kind == Kind.TOKEN_WHILE
+				|| this.current.kind == Kind.TOKEN_TRY
+				|| this.current.kind == Kind.TOKEN_THROW
 				|| this.current.kind == Kind.TOKEN_SYSTEM
 				|| this.current.kind == Kind.TOKEN_ID) {
 			stms.add(this.parseStatement());
@@ -270,6 +277,8 @@ public class Parser {
 	// -> System.out.println(Exp) ;
 	// -> id = Exp ;
 	// -> id[Exp] = Exp ;
+	// -> try Statement catch Statement
+	// -> throw
 	private ast.stm.T parseStatement() {
 		// Lab1. Exercise 4: Fill in the missing code
 		// to parse a statement.
@@ -333,6 +342,20 @@ public class Parser {
 				this.error();
 				return null;
 			}
+		}
+		case TOKEN_TRY:{
+			String bufId = JmpBuf.next();
+			bufStack.push(bufId);
+			this.advance();
+			ast.stm.T tryy = this.parseStatement();
+			this.eatToken(Kind.TOKEN_CATCH);
+			ast.stm.T catchh = this.parseStatement();
+			return new ast.stm.TryCatch(bufId,tryy,catchh);
+		}
+		case TOKEN_THROW:{
+			this.advance();
+			this.eatToken(Kind.TOKEN_SEMI);
+			return new ast.stm.Throw(bufStack.pop());
 		}
 		default:
 			this.error();

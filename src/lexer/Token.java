@@ -17,6 +17,7 @@ public class Token
 		TOKEN_BOOLEAN, 				// "boolean"
 		TOKEN_CLASS, 				// "class"
 		TOKEN_COMMER, 				// ","
+		TOKEN_CATCH, 				// "catch"
 		TOKEN_DOT, 					// "."
 		TOKEN_ELSE, 				// "else"
 		TOKEN_EOF, 					// EOF
@@ -48,8 +49,10 @@ public class Token
 		TOKEN_SUB, 					// "-"
 		TOKEN_SYSTEM, 				// "System"
 		TOKEN_THIS, 				// "this"
+		TOKEN_THROW, 				// "throw"
 		TOKEN_TIMES, 				// "*"
 		TOKEN_TRUE, 				// "true"
+		TOKEN_TRY, 			// "try"
 		TOKEN_VOID, 				// "void"
 		TOKEN_WHILE, 				// "while"
 	}	

@@ -32,6 +32,9 @@ public class MyMap
 		map.put("true", Kind.TOKEN_TRUE);
 		map.put("void", Kind.TOKEN_VOID);
 		map.put("while", Kind.TOKEN_WHILE);
+		map.put("throw", Kind.TOKEN_THROW);
+		map.put("try", Kind.TOKEN_TRY);
+		map.put("catch", Kind.TOKEN_CATCH);
 	}
 	
 	public Kind getValue(String key)

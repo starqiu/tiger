@@ -620,6 +620,21 @@ public class ElaboratorVisitor implements ast.Visitor {
 		return;
 	}
 
+	/*
+	 * try stm catch stm
+	 */
+	public void visit(ast.stm.TryCatch s) {
+		s.tryy.accept(this);
+		s.catchh.accept(this);
+	}
+
+	/*
+	 * throw
+	 */
+	public void visit(ast.stm.Throw s) {
+		return;
+	}
+
 	// type
 	// boolean
 	@Override
