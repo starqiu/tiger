@@ -134,11 +134,14 @@ public class CommandLine
             return;
           }
         }), new Arg<Object>("skip", "<pass>", "which compile pass to skip",
-        Kind.String, new F<Object>() {
+        Kind.StringList, new F<Object>() {
           @Override
           public void f(Object s)
           {
-            Control.addPass((String)s);
+        	String[] ss=(String[])s;
+        	for (String temp : ss) {
+        		Control.addPass((String)temp);
+			}
             return;
           }
         }), new Arg<Object>("testFac", null,
