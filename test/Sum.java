@@ -1,6 +1,10 @@
 class Sum { 
 	public static void main(String[] a) {
-        System.out.println(new Doit().doit(101));
+		try {
+			System.out.println(new Doit().doit(101));
+		} catch  {
+			System.out.println(33);
+		}
     }
 }
 
@@ -19,13 +23,13 @@ class Doit {
             	System.out.println(1);
             	try {
             		System.out.println(6);
-					throw;
+					throw(3);
 				} catch  {
 					System.out.println(7);
 				}
             	sum = this.f();
             }
-		} catch {
+		} catch(3) {
 			System.out.println(2);
 		}
 		try {

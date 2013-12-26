@@ -2,21 +2,17 @@ package parser;
 
 import java.io.PushbackReader;
 import java.util.LinkedList;
-import java.util.Stack;
 
-import util.JmpBuf;
-
-import ast.exp.T;
 import lexer.Lexer;
 import lexer.Token;
 import lexer.Token.Kind;
+import ast.exp.T;
 
 public class Parser {
 	String fname;
 	Lexer lexer;
 	Token current;
 	boolean isField;
-	Stack<String> bufStack ;
 
 	public Parser(String fname, PushbackReader fstream) {
 		this.fname = fname;
@@ -25,7 +21,6 @@ public class Parser {
 		while (this.current.kind == Kind.TOKEN_NOTE)
 			this.current = this.lexer.nextToken();
 		this.isField = false;
-		this.bufStack = new  Stack<String>();
 	}
 
 	// /////////////////////////////////////////////
@@ -278,7 +273,9 @@ public class Parser {
 	// -> id = Exp ;
 	// -> id[Exp] = Exp ;
 	// -> try Statement catch Statement
-	// -> throw
+	// -> try Statement catch(INTEGER_LITERAL) Statement
+	// -> throw;
+	// -> throw(INTEGER_LITERAL);
 	private ast.stm.T parseStatement() {
 		// Lab1. Exercise 4: Fill in the missing code
 		// to parse a statement.
@@ -344,18 +341,41 @@ public class Parser {
 			}
 		}
 		case TOKEN_TRY:{
-			String bufId = JmpBuf.next();
-			bufStack.push(bufId);
 			this.advance();
 			ast.stm.T tryy = this.parseStatement();
 			this.eatToken(Kind.TOKEN_CATCH);
+			String match =null;
+			if (this.current.kind == Kind.TOKEN_LPAREN) {
+				this.eatToken(Kind.TOKEN_LPAREN);
+				match = this.current.lexeme;
+				this.eatToken(Kind.TOKEN_NUM);
+				this.eatToken(Kind.TOKEN_RPAREN);
+			}
 			ast.stm.T catchh = this.parseStatement();
-			return new ast.stm.TryCatch(bufId,tryy,catchh);
+			if (null == match) {
+				return new ast.stm.TryCatch(tryy,catchh);
+			}else {
+				return new ast.stm.TryCatch(Integer.valueOf(match).intValue(),tryy,catchh);
+			}
 		}
 		case TOKEN_THROW:{
 			this.advance();
-			this.eatToken(Kind.TOKEN_SEMI);
-			return new ast.stm.Throw(bufStack.pop());
+			if (current.kind == Kind.TOKEN_SEMI) {
+				this.eatToken(Kind.TOKEN_SEMI);
+				return new ast.stm.Throw();
+			}else {
+				this.eatToken(Kind.TOKEN_LPAREN);
+				if (this.current.kind == Kind.TOKEN_NUM) {
+					String match = this.current.lexeme;
+					this.advance();
+					this.eatToken(Kind.TOKEN_RPAREN);
+					this.eatToken(Kind.TOKEN_SEMI);
+					return new ast.stm.Throw(Integer.valueOf(match).intValue());
+				}else {
+					this.error();
+					return null;
+				}
+			}
 		}
 		default:
 			this.error();

@@ -316,7 +316,7 @@ public class TranslateVisitor implements ast.Visitor {
 		s.catchh.accept(this);
 		codegen.C.stm.T catchh = this.stm;
 
-		this.stm = new codegen.C.stm.TryCatch(s.bufId, tryy, catchh);
+		this.stm = new codegen.C.stm.TryCatch(s.match, tryy, catchh);
 		return;
 	}
 
@@ -324,7 +324,7 @@ public class TranslateVisitor implements ast.Visitor {
 	 * throw
 	 */
 	public void visit(ast.stm.Throw s) {
-		this.stm = new codegen.C.stm.Throw(s.bufId);
+		this.stm = new codegen.C.stm.Throw(s.match);
 		return;
 	}
 

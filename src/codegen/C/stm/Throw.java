@@ -4,10 +4,13 @@ import codegen.C.Visitor;
 
 public class Throw extends T {
 	
-	public String bufId;
+	public int match=-1;//the type of exception
 
-	public Throw(String bufId) {
-		this.bufId = bufId;
+	public Throw() {
+	}
+	
+	public Throw(int match) {
+		this.match = match;
 	}
 
 	@Override

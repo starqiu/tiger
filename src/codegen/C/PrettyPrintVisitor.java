@@ -1,11 +1,13 @@
 package codegen.C;
 
-import control.Control;
-
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.LinkedList;
 
-import util.JmpBuf;
+import util.Temp;
+
+import control.Control;
 
 public class PrettyPrintVisitor implements Visitor {
 	private int indentLevel;
@@ -310,40 +312,98 @@ public class PrettyPrintVisitor implements Visitor {
 		}
 		return;
 	}
+	
 	//throw
 	public void visit(codegen.C.stm.Throw s) {
 		this.printSpaces();
-		this.sayln("longjmp("+s.bufId+",1);");
+		this.say("Tiger_throw( ");
+		this.say(Integer.valueOf(s.match).toString());
+		this.sayln(" );");
 		return;
 	}
+	
 	//try Statement catch Statement
 	public void visit(codegen.C.stm.TryCatch s) {
 		this.printSpaces();
-		this.sayln("if(!setjmp("+s.bufId+"))");
+		String exEntryName = Temp.next();
+		this.sayln("struct ex_stack "+exEntryName+";");
+		this.printSpaces();
+		this.sayln(exEntryName+".match = "+s.match+" ;");
+		this.printSpaces();
+		this.sayln("Tiger_try( &"+exEntryName+" );");
+		this.printSpaces();
+		String matchName = Temp.next();
+		this.sayln("int "+matchName+" = setjmp( "+exEntryName+".context );");
+		this.printSpaces();
+		this.sayln("if(!"+matchName+")");
 		if (!(s.tryy instanceof codegen.C.stm.Block)) {
 			this.indent();
 			s.tryy.accept(this);
 			this.unIndent();
+			/*this.printSpaces();
+			this.sayln("while (global_exception_stack->match  != "+matchName+")");
 			this.printSpaces();
-			this.sayln("else");
+			this.sayln("{");
+			this.indent();
+			this.printSpaces();
+			this.sayln("if (global_exception_stack->match  == NULL)");
+			this.indent();
+			this.printSpaces();
+			this.sayln("longjmp(mainContext,65530);");
+			this.unIndent();
+			this.printSpaces();
+			this.sayln("global_exception_stack = global_exception_stack->prev;");
+			this.unIndent();
+			this.printSpaces();
+			this.sayln("}");*/
+			this.printSpaces();
+			this.sayln("if (global_exception_stack->match  == "+matchName+")");
+			this.printSpaces();
+			this.sayln("{");
+			this.indent();
+			this.printSpaces();
+			this.sayln("Tiger_catch(global_exception_stack);");
 			if (!(s.catchh instanceof codegen.C.stm.Block)) {
-				this.indent();
 				s.catchh.accept(this);
-				this.unIndent();
 			} else {
 				s.catchh.accept(this);
 			}
+			this.unIndent();
+			this.printSpaces();
+			this.sayln("}");
 		} else {
 			s.tryy.accept(this);
+			/*this.printSpaces();
+			this.sayln("while (global_exception_stack->match  != "+matchName+")");
 			this.printSpaces();
-			this.sayln("else");
+			this.sayln("{");
+			this.indent();
+			this.printSpaces();
+			this.sayln("if (global_exception_stack->match  == NULL)");
+			this.indent();
+			this.printSpaces();
+			this.sayln("longjmp(mainContext,65530);");
+			this.unIndent();
+			this.printSpaces();
+			this.sayln("global_exception_stack = global_exception_stack->prev;");
+			this.unIndent();
+			this.printSpaces();
+			this.sayln("}");*/
+			this.printSpaces();
+			this.sayln("if (global_exception_stack->match  == "+matchName+")");
+			this.printSpaces();
+			this.sayln("{");
+			this.indent();
+			this.printSpaces();
+			this.sayln("Tiger_catch(global_exception_stack);");
 			if (!(s.catchh instanceof codegen.C.stm.Block)) {
-				this.indent();
 				s.catchh.accept(this);
-				this.unIndent();
 			} else {
 				s.catchh.accept(this);
 			}
+			this.unIndent();
+			this.printSpaces();
+			this.sayln("}");
 		}
 		return;
 	}
@@ -539,7 +599,7 @@ public class PrettyPrintVisitor implements Visitor {
 		this.sayln("int Tiger_main()");
 		this.sayln("{");
 		this.indent();
-		this.printSpaces();
+		this.printSpaces();		
 		this.sayln("struct Tiger_main_gc_frame frame;");
 		this.printSpaces();
 		this.sayln("frame.prev = previous;");
@@ -562,8 +622,35 @@ public class PrettyPrintVisitor implements Visitor {
 				this.sayln(d.id + ";");
 			}
 		}
+		this.printSpaces();
+		this.sayln("int mainMatch = setjmp(mainContext);");
+		this.printSpaces();
+		this.sayln("if(mainMatch)");
+		this.printSpaces();
+		this.sayln("{");
+		this.indent();
+		this.printSpaces();
+		this.sayln("if(mainMatch != 65530)");
+		this.indent();
+		this.printSpaces();
+		this.sayln("return 0;");
+		this.unIndent();
+		this.printSpaces();
+		this.sayln("printf(\"uncatched exception!\");");
+		this.printSpaces();
+		this.sayln("return -1;");
+		this.unIndent();
+		this.printSpaces();
+		this.sayln("}");
+		this.printSpaces();
+		this.sayln("else");
+		this.printSpaces();
+		this.sayln("{");
+		this.indent();
 		m.stm.accept(this);
 		this.unIndent();
+		this.printSpaces();
+		this.sayln("}\n");
 		this.sayln("}\n");
 		return;
 	}
@@ -673,15 +760,18 @@ public class PrettyPrintVisitor implements Visitor {
 		this.sayln("// Do NOT modify!\n");
 
 		this.sayln("// includes");
-		this.sayln("#include <setjmp.h>\n");
-		int bufNum = JmpBuf.getCount();
+		this.sayln("#include <setjmp.h>");
+		this.sayln("#include <stdio.h>");
+		this.sayln("#include \"exception.h\"\n");
+		/*int bufNum = JmpBuf.getCount();
 		if (bufNum != 0) {
 			this.sayln("//the dec of  jmp_buf ids");
 			for(int i = 0;i<bufNum;i++){
 				this.sayln("jmp_buf buf_"+i+";");
 			}
-		}
-		this.sayln("");
+		}*/
+		this.sayln("extern struct ex_stack  *global_exception_stack;");
+		this.sayln("extern jmp_buf mainContext;\n");
 		this.sayln("// structures");
 		for (codegen.C.classes.T c : p.classes) {
 			c.accept(this);

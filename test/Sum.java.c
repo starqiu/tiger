@@ -3,11 +3,11 @@
 
 // includes
 #include <setjmp.h>
+#include <stdio.h>
+#include "exception.h"
 
-//the dec of  jmp_buf ids
-jmp_buf buf_0;
-jmp_buf buf_1;
-jmp_buf buf_2;
+extern struct ex_stack  *global_exception_stack;
+extern jmp_buf mainContext;
 
 // structures
 struct Sum
@@ -122,37 +122,58 @@ int Doit_doit(struct Doit * thiss, int n)
 
     i = 0;
     sum = 0;
-    if(!setjmp(buf_0))
+    struct ex_stack x_3;
+    x_3.match = 3 ;
+    Tiger_try( &x_3 );
+    int x_4 = setjmp( x_3.context );
+    if(!x_4)
     {
         while(i < n)
         {
             sum = sum + i;
             i = i + 1;
             System_out_println(1);
-            if(!setjmp(buf_1))
+            struct ex_stack x_5;
+            x_5.match = -1 ;
+            Tiger_try( &x_5 );
+            int x_6 = setjmp( x_5.context );
+            if(!x_6)
             {
                 System_out_println(6);
-                longjmp(buf_1,1);
+                Tiger_throw( 3 );
             }
-            else
+            if (global_exception_stack->match  == x_6)
             {
-                System_out_println(7);
+                Tiger_catch(global_exception_stack);
+                {
+                    System_out_println(7);
+                }
             }
             sum = (frame.x_1=thiss, frame.x_1->vptr->f(frame.x_1));
         }
     }
-    else
+    if (global_exception_stack->match  == x_4)
     {
-        System_out_println(2);
+        Tiger_catch(global_exception_stack);
+        {
+            System_out_println(2);
+        }
     }
-    if(!setjmp(buf_2))
+    struct ex_stack x_7;
+    x_7.match = -1 ;
+    Tiger_try( &x_7 );
+    int x_8 = setjmp( x_7.context );
+    if(!x_8)
     {
         System_out_println(8);
-        longjmp(buf_2,1);
+        Tiger_throw( -1 );
     }
-    else
+    if (global_exception_stack->match  == x_8)
     {
-        System_out_println(9);
+        Tiger_catch(global_exception_stack);
+        {
+            System_out_println(9);
+        }
     }
     previous = frame.prev;
     return sum;
@@ -185,7 +206,7 @@ int Doit_testjmp(struct Doit * thiss)
     frame.locals_gc_map = Doit_testjmp_locals_gc_map;
 
     System_out_println(3);
-    longjmp(buf_0,1);
+    Tiger_throw( -1 );
     previous = frame.prev;
     return 1;
 }
@@ -199,6 +220,32 @@ int Tiger_main()
     frame.arguments_gc_map = 0;
     frame.arguments_base_address = 0;
     frame.locals_gc_map = Tiger_main_locals_gc_map;
-    System_out_println((frame.x_0=((struct Doit*)(Tiger_new(&Doit_vtable_, sizeof(struct Doit)))), frame.x_0->vptr->doit(frame.x_0, 101)));
+    int mainMatch = setjmp(mainContext);
+    if(mainMatch)
+    {
+        if(mainMatch != 65530)
+            return 0;
+        printf("uncatched exception!");
+        return -1;
+    }
+    else
+    {
+        struct ex_stack x_9;
+        x_9.match = -1 ;
+        Tiger_try( &x_9 );
+        int x_10 = setjmp( x_9.context );
+        if(!x_10)
+        {
+            System_out_println((frame.x_0=((struct Doit*)(Tiger_new(&Doit_vtable_, sizeof(struct Doit)))), frame.x_0->vptr->doit(frame.x_0, 101)));
+        }
+        if (global_exception_stack->match  == x_10)
+        {
+            Tiger_catch(global_exception_stack);
+            {
+                System_out_println(33);
+            }
+        }
+    }
+
 }
 
