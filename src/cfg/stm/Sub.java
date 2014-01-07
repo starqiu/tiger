@@ -23,4 +23,8 @@ public class Sub extends T
   {
     v.visit(this);
   }
+	@Override
+	public String toString() {
+		return dst + " = " + left + " - " + right;
+	}
 }

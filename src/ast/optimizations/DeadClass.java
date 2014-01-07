@@ -168,14 +168,16 @@ public class DeadClass implements ast.Visitor {
 	 * try stm catch stm
 	 */
 	public void visit(ast.stm.TryCatch s) {
-
+		s.tryy.accept(this);
+		s.catchh.accept(this);
+		return;
 	}
 
 	/*
 	 * throw
 	 */
 	public void visit(ast.stm.Throw s) {
-
+		return;
 	}
 
 	// type
@@ -186,7 +188,17 @@ public class DeadClass implements ast.Visitor {
 
 	@Override
 	public void visit(ast.type.Class t) {
-		return;
+		/* *
+		 * There will be code that have declaration but without assign, so
+		 * we may need to do DeadClass elimination again after DeadCode
+		 * elimination.
+		 * */
+		if (t.id != null) {
+			if (this.set.contains(t.id))
+				return;
+			this.worklist.add(t.id);
+			this.set.add(t.id);
+		}
 	}
 
 	@Override
@@ -196,17 +208,23 @@ public class DeadClass implements ast.Visitor {
 
 	@Override
 	public void visit(ast.type.IntArray t) {
+		return;
 	}
 
 	// dec
 	@Override
 	public void visit(ast.dec.Dec d) {
-		return;
+		d.type.accept(this);
 	}
 
 	// method
 	@Override
 	public void visit(ast.method.Method m) {
+		for (ast.dec.T formal: m.formals)
+			formal.accept(this);
+		m.retType.accept(this);
+		for (ast.dec.T dec: m.locals)
+			dec.accept(this);
 		for (ast.stm.T s : m.stms)
 			s.accept(this);
 		m.retExp.accept(this);
@@ -216,6 +234,16 @@ public class DeadClass implements ast.Visitor {
 	// class
 	@Override
 	public void visit(ast.classs.Class c) {
+		if (c.extendss != null) {
+			if (this.set.contains(c.extendss))
+				return;
+			this.worklist.add(c.extendss);
+			this.set.add(c.extendss);
+		}
+		for (ast.dec.T dec: c.decs)
+			dec.accept(this);
+		for (ast.method.T m: c.methods)
+			m.accept(this);
 	}
 
 	// main class
@@ -269,5 +297,7 @@ public class DeadClass implements ast.Visitor {
 
 	@Override
 	public void visit(Paren e) {
+		e.accept(this);
+		return;
 	}
 }

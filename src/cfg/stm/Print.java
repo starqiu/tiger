@@ -16,4 +16,8 @@ public class Print extends T
   {
     v.visit(this);
   }
+	@Override
+	public String toString() {
+		return "print(" + arg + ")";
+	}
 }

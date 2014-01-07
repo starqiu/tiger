@@ -24,4 +24,12 @@ public class InvokeVirtual extends T
   {
     v.visit(this);
   }
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append(dst + " = " + obj + "." + f);
+		for (cfg.operand.T arg: args)
+			sb.append(arg);
+		return sb.toString();
+	}
 }

@@ -120,6 +120,40 @@ public class VisualVisitor implements Visitor {
 	}
 
 	@Override
+	public void visit(cfg.stm.And s) {
+		emit(s.dst + " = ");
+		s.left.accept(this);
+		emit(" && ");
+		s.right.accept(this);
+		emit(";");
+		return;
+	}
+
+	@Override
+	public void visit(cfg.stm.ArraySelect arraySelect) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Length length) {
+	}
+
+	@Override
+	public void visit(cfg.stm.NewIntArray newIntArray) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Not not) {
+	}
+
+	@Override
+	public void visit(cfg.stm.AssignArray assignArray) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Paren s) {
+	}
+
+	@Override
 	public void visit(cfg.transfer.Return s) {
 
 		return;
@@ -133,10 +167,17 @@ public class VisualVisitor implements Visitor {
 
 	@Override
 	public void visit(cfg.type.Int t) {
+		emit("int");
 	}
 
 	@Override
 	public void visit(cfg.type.IntArray t) {
+		emit("int*");
+	}
+
+	@Override
+	public void visit(cfg.type.Boolean t) {
+		emit("boolean");
 	}
 
 	// dec

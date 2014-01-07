@@ -21,4 +21,8 @@ public class Move extends T
   {
     v.visit(this);
   }
+	@Override
+	public String toString() {
+		return dst + " = " + src;
+	}
 }

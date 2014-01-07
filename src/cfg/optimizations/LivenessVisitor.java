@@ -347,4 +347,36 @@ public class LivenessVisitor implements cfg.Visitor {
 		return;
 	}
 
+	@Override
+	public void visit(cfg.type.Boolean t) {
+	}
+
+	@Override
+	public void visit(cfg.stm.And and) {
+	}
+
+	@Override
+	public void visit(cfg.stm.ArraySelect arraySelect) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Length length) {
+	}
+
+	@Override
+	public void visit(cfg.stm.NewIntArray newIntArray) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Not not) {
+	}
+
+	@Override
+	public void visit(cfg.stm.AssignArray assignArray) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Paren s) {
+	}
+
 }

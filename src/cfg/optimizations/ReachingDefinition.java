@@ -69,43 +69,53 @@ public class ReachingDefinition implements cfg.Visitor {
 	// operand
 	@Override
 	public void visit(cfg.operand.Int operand) {
+		return;
 	}
 
 	@Override
 	public void visit(cfg.operand.Var operand) {
+		return;
 	}
 
 	// statements
 	@Override
 	public void visit(cfg.stm.Add s) {
+		oneStmGen.add(s);
 	}
 
 	@Override
 	public void visit(cfg.stm.InvokeVirtual s) {
+		oneStmGen.add(s);
 	}
 
 	@Override
 	public void visit(cfg.stm.Lt s) {
+		oneStmGen.add(s);
 	}
 
 	@Override
 	public void visit(cfg.stm.Move s) {
+		oneStmGen.add(s);
 	}
 
 	@Override
 	public void visit(cfg.stm.NewObject s) {
+		oneStmGen.add(s);
 	}
 
 	@Override
 	public void visit(cfg.stm.Print s) {
+		oneStmGen.add(s);
 	}
 
 	@Override
 	public void visit(cfg.stm.Sub s) {
+		oneStmGen.add(s);
 	}
 
 	@Override
 	public void visit(cfg.stm.Times s) {
+		oneStmGen.add(s);
 	}
 
 	// transfer
@@ -214,6 +224,38 @@ public class ReachingDefinition implements cfg.Visitor {
 	// program
 	@Override
 	public void visit(cfg.program.Program p) {
+	}
+
+	@Override
+	public void visit(cfg.type.Boolean t) {
+	}
+
+	@Override
+	public void visit(cfg.stm.And and) {
+	}
+
+	@Override
+	public void visit(cfg.stm.ArraySelect arraySelect) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Length length) {
+	}
+
+	@Override
+	public void visit(cfg.stm.NewIntArray newIntArray) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Not not) {
+	}
+
+	@Override
+	public void visit(cfg.stm.AssignArray assignArray) {
+	}
+
+	@Override
+	public void visit(cfg.stm.Paren s) {
 	}
 
 }

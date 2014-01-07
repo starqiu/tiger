@@ -126,6 +126,67 @@ public class PrettyPrintVisitor implements Visitor {
 
 	// transfer
 	@Override
+	public void visit(cfg.stm.And s) {
+		this.printSpaces();
+		this.say(s.dst + " = ");
+		s.left.accept(this);
+		this.say(" && ");
+		s.right.accept(this);
+		this.say(";");
+		return;
+	}
+
+	@Override
+	public void visit(cfg.stm.ArraySelect s) {
+		this.printSpaces();
+		this.say(s.dst + " = ");
+		s.array.accept(this);
+		this.say(" [ ");
+		s.index.accept(this);
+		this.say(" ];");
+		return;
+	}
+
+	@Override
+	public void visit(cfg.stm.Length s) {
+		this.printSpaces();
+		this.say(s.dst + " = ");
+		s.array.accept(this);
+		this.say(".length;");
+		return;
+	}
+
+	@Override
+	public void visit(cfg.stm.NewIntArray s) {
+		this.printSpaces();
+		this.say(s.dst + " = new int[");
+		s.exp.accept(this);
+		this.say(" ];");
+		return;
+	}
+
+	@Override
+	public void visit(cfg.stm.Not s) {
+		this.printSpaces();
+		this.say(s.dst + " = !(");
+		s.exp.accept(this);
+		this.say(");");
+		return;
+	}
+
+	@Override
+	public void visit(cfg.stm.AssignArray s) {
+		this.printSpaces();
+		this.say(s.id + "[");
+		s.index.accept(this);
+		this.say("] = ");
+		s.exp.accept(this);
+		this.say(";");
+		return;
+	}
+
+	// transfer
+	@Override
 	public void visit(cfg.transfer.If s) {
 		this.printSpaces();
 		this.say("if (");
@@ -169,6 +230,12 @@ public class PrettyPrintVisitor implements Visitor {
 
 	@Override
 	public void visit(cfg.type.IntArray t) {
+		this.say("int[]");
+	}
+
+	@Override
+	public void visit(cfg.type.Boolean t) {
+		this.say("boolean");
 	}
 
 	// dec
@@ -345,6 +412,10 @@ public class PrettyPrintVisitor implements Visitor {
 			System.exit(1);
 		}
 
+	}
+
+	@Override
+	public void visit(cfg.stm.Paren s) {
 	}
 
 }
